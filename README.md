@@ -8,7 +8,7 @@
 
 This repository contains a production-grade microservices architecture for the LifePill application, following industry best practices and SOLID principles.
 
-## 📦 Repository Structure (Git Submodules)
+##  Repository Structure (Git Submodules)
 
 This is a **monorepo** that links to the following microservices as Git submodules:
 
@@ -41,7 +41,7 @@ git submodule update --remote --merge
 | **API Gateway** | 9191 | Single entry point with routing, load balancing, and circuit breaker |
 | **User Auth Service** | 8080 | JWT-based authentication service |
 
-## 🚀 Startup Order
+##  Startup Order
 
 **Important:** Services must be started in the following order:
 
@@ -140,7 +140,7 @@ cd user-auth
 docker-compose up -d
 ```
 
-## 📊 Monitoring & Health Checks
+##  Monitoring & Health Checks
 
 ### Actuator Endpoints
 
