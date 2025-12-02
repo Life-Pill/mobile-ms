@@ -1,0 +1,9 @@
+[submodule "api-gateway"]
+	path = api-gateway
+	url = https://github.com/Life-Pill/api-gateway.git
+[submodule "service-registry"]
+	path = service-registry
+	url = https://github.com/Life-Pill/service-registry.git
+[submodule "user-auth"]
+	path = user-auth
+	url = https://github.com/Life-Pill/mobile-auth-user-service.git

@@ -1,0 +1,6 @@
+# Bootstrap configuration - loaded before application.yml
+# This ensures config server starts properly without circular dependencies
+
+spring:
+  application:
+    name: CONFIG-SERVER

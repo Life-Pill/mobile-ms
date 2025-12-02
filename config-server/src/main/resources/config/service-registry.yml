@@ -1,0 +1,32 @@
+# ============================================
+# Service Registry (Eureka Server) Configuration
+# ============================================
+
+server:
+  port: ${EUREKA_PORT:8761}
+
+eureka:
+  instance:
+    hostname: ${EUREKA_HOSTNAME:localhost}
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+  server:
+    # Enable self-preservation mode (recommended for production)
+    enable-self-preservation: ${EUREKA_SELF_PRESERVATION:true}
+    # Renewal threshold
+    renewal-percent-threshold: 0.85
+    # Eviction interval
+    eviction-interval-timer-in-ms: 60000
+    # Response cache update interval
+    response-cache-update-interval-ms: 30000
+    # Wait time before starting eviction
+    wait-time-in-ms-when-sync-empty: 5
+
+# Dashboard configuration
+spring:
+  freemarker:
+    template-loader-path: classpath:/templates/
+    prefer-file-system-access: false

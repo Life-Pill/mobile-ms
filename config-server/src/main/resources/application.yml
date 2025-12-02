@@ -1,0 +1,111 @@
+# LifePill Config Server Configuration
+# This is the centralized configuration server
+# Start Order: 1. Service Registry -> 2. Config Server -> 3. Other Services
+
+server:
+  port: ${CONFIG_SERVER_PORT:8888}
+
+spring:
+  application:
+    name: CONFIG-SERVER
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:native}
+  
+  # Security credentials for accessing config server
+  security:
+    user:
+      name: ${CONFIG_SERVER_USERNAME:configuser}
+      password: ${CONFIG_SERVER_PASSWORD:configsecret}
+  
+  # Config Server Backend Configuration
+  cloud:
+    config:
+      server:
+        # Native file system backend (for development/simple production)
+        native:
+          search-locations:
+            - classpath:/config
+            - file:${CONFIG_REPO_PATH:./config-repo}
+        # Git backend (recommended for production)
+        # Uncomment below and comment native section for Git-based config
+        # git:
+        #   uri: ${CONFIG_GIT_URI:https://github.com/Life-Pill/config-repo}
+        #   default-label: ${CONFIG_GIT_BRANCH:main}
+        #   clone-on-start: true
+        #   search-paths: '{application}'
+        #   username: ${CONFIG_GIT_USERNAME:}
+        #   password: ${CONFIG_GIT_PASSWORD:}
+        #   force-pull: true
+
+# Eureka Client Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+    registry-fetch-interval-seconds: 30
+  instance:
+    hostname: ${HOSTNAME:localhost}
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.value}
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+    metadata-map:
+      zone: ${ZONE:primary}
+      profile: ${spring.profiles.active}
+
+# Actuator Configuration for Production Monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,env,refresh,bus-refresh
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when_authorized
+      show-components: when_authorized
+      probes:
+        enabled: true
+    info:
+      enabled: true
+  info:
+    env:
+      enabled: true
+    build:
+      enabled: true
+    git:
+      enabled: true
+      mode: full
+  health:
+    diskspace:
+      enabled: true
+    eureka:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      environment: ${ENVIRONMENT:development}
+
+# Application Info for Actuator
+info:
+  app:
+    name: LifePill Config Server
+    description: Centralized Configuration Management for LifePill Microservices
+    version: v1.0.0
+    encoding: UTF-8
+    java:
+      version: ${java.version}
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.lifepill: DEBUG
+    org.springframework.cloud.config: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: ${LOG_PATH:./logs}/config-server.log
