@@ -1,0 +1,25 @@
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+
+# Spring Boot
+logs/
+*.log
+*.pid
+
+# Docker
+*.env
+docker-compose.override.yml
+docker-compose.local.yml
+.docker/
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini

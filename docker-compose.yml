@@ -1,0 +1,210 @@
+version: '3.8'
+
+services:
+  # Service Registry (Eureka Server)
+  service-registry:
+    build:
+      context: ./service-registry
+      dockerfile: Dockerfile
+    container_name: lifepill-service-registry
+    ports:
+      - "8761:8761"
+    environment:
+      - EUREKA_PORT=8761
+      - EUREKA_USERNAME=admin
+      - EUREKA_PASSWORD=${EUREKA_PASSWORD:-admin}
+      - EUREKA_SELF_PRESERVATION=true
+      - LOG_PATH=/logs
+    volumes:
+      - ./logs/service-registry:/logs
+    networks:
+      - lifepill-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Config Server
+  config-server:
+    build:
+      context: ./config-server
+      dockerfile: Dockerfile
+    container_name: lifepill-config-server
+    ports:
+      - "8888:8888"
+    environment:
+      - CONFIG_SERVER_PORT=8888
+      - CONFIG_SERVER_USERNAME=configuser
+      - CONFIG_SERVER_PASSWORD=${CONFIG_SERVER_PASSWORD:-configsecret}
+      - EUREKA_URI=http://admin:${EUREKA_PASSWORD:-admin}@service-registry:8761/eureka/
+      - LOG_PATH=/logs
+    volumes:
+      - ./logs/config-server:/logs
+      - ./config-repo:/config-repo
+    networks:
+      - lifepill-network
+    depends_on:
+      service-registry:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: lifepill-api-gateway
+    ports:
+      - "9191:9191"
+    environment:
+      - API_GATEWAY_PORT=9191
+      - EUREKA_URI=http://admin:${EUREKA_PASSWORD:-admin}@service-registry:8761/eureka/
+      - CONFIG_SERVER_ENABLED=true
+      - CONFIG_SERVER_URI=http://config-server:8888
+      - CONFIG_SERVER_USERNAME=configuser
+      - CONFIG_SERVER_PASSWORD=${CONFIG_SERVER_PASSWORD:-configsecret}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:8081}
+      - LOG_PATH=/logs
+    volumes:
+      - ./logs/api-gateway:/logs
+    networks:
+      - lifepill-network
+    depends_on:
+      service-registry:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9191/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # User Auth Service
+  user-auth:
+    build:
+      context: ./user-auth
+      dockerfile: Dockerfile
+    container_name: lifepill-user-auth
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - DB_URL=jdbc:postgresql://postgres:5432/mobile_user_auth_db
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - JWT_SECRET=${JWT_SECRET}
+      - EUREKA_URI=http://admin:${EUREKA_PASSWORD:-admin}@service-registry:8761/eureka/
+      - CONFIG_SERVER_ENABLED=true
+      - CONFIG_SERVER_URI=http://config-server:8888
+      - CONFIG_SERVER_USERNAME=configuser
+      - CONFIG_SERVER_PASSWORD=${CONFIG_SERVER_PASSWORD:-configsecret}
+      - MAIL_HOST=${MAIL_HOST:-smtp.gmail.com}
+      - MAIL_PORT=${MAIL_PORT:-587}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - LOG_PATH=/logs
+    volumes:
+      - ./logs/user-auth:/logs
+    networks:
+      - lifepill-network
+    depends_on:
+      service-registry:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: lifepill-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+      - POSTGRES_DB=mobile_user_auth_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - lifepill-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis (for API Gateway rate limiting)
+  redis:
+    image: redis:7-alpine
+    container_name: lifepill-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - lifepill-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Prometheus (Metrics Collection)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: lifepill-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - lifepill-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+
+  # Grafana (Metrics Visualization)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: lifepill-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - lifepill-network
+    depends_on:
+      - prometheus
+
+networks:
+  lifepill-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
