@@ -159,6 +159,7 @@ services:
       - POSTGRES_DB=mobile_user_auth_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
     networks:
       - lifepill-network
     healthcheck:
@@ -234,6 +235,75 @@ services:
       retries: 5
       start_period: 30s
 
+  # Patient Customer Service
+  patient-customer-service:
+    build:
+      context: ./patient-customer-service
+      dockerfile: Dockerfile
+    container_name: lifepill-patient-customer-service
+    ports:
+      - "8070:8070"
+    environment:
+      - PORT=8070
+      - DB_DATABASE_URL=jdbc:postgresql://postgres:5432/customer_service_db
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - MDB_CONNECTION_STRING=${MONGODB_URI:-mongodb://mongodb:27017/lifepill_customer}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - EUREKA_URI=http://admin:${EUREKA_PASSWORD:-admin}@service-registry:8761/eureka/
+      - LOG_PATH=/logs
+      # CORS Configuration
+      - CORS_ENABLED=${CORS_ENABLED:-true}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS,PATCH}
+      - CORS_HEADERS=${CORS_HEADERS:-*}
+      - CORS_MAX_AGE=${CORS_MAX_AGE:-86400}
+      - CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS:-false}
+      # Distributed Tracing
+      - TRACING_ENABLED=${TRACING_ENABLED:-true}
+      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
+      - TRACING_SAMPLING_PROBABILITY=${TRACING_SAMPLING_PROBABILITY:-1.0}
+      # Swagger Configuration
+      - SWAGGER_SERVER_URL=${CUSTOMER_SERVICE_SWAGGER_URL:-http://34.9.86.185:8070}
+    volumes:
+      - ./logs/patient-customer-service:/logs
+    networks:
+      - lifepill-network
+    depends_on:
+      service-registry:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8070/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  # MongoDB (for Patient Customer Service)
+  mongodb:
+    image: mongo:6-jammy
+    container_name: lifepill-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=lifepill_customer
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - lifepill-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
 networks:
   lifepill-network:
     driver: bridge
@@ -243,3 +313,4 @@ volumes:
   redis_data:
   prometheus_data:
   grafana_data:
+  mongodb_data:

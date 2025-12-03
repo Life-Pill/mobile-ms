@@ -30,6 +30,12 @@ scrape_configs:
     static_configs:
       - targets: ['user-auth:8080']
 
+  # Patient Customer Service metrics
+  - job_name: 'patient-customer-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['patient-customer-service:8070']
+
   # Prometheus self-monitoring
   - job_name: 'prometheus'
     static_configs:
