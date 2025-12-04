@@ -168,11 +168,11 @@ aws:
 
 # CORS Configuration
 cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
-  allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS,PATCH}
-  allowed-headers: ${CORS_ALLOWED_HEADERS:Authorization,Cache-Control,Content-Type}
-  allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
-  max-age: ${CORS_MAX_AGE:3600}
+  allowed-origins: ${CORS_ORIGINS:*}
+  allowed-methods: ${CORS_METHODS:GET,POST,PUT,DELETE,OPTIONS,PATCH}
+  allowed-headers: ${CORS_HEADERS:*}
+  allow-credentials: ${CORS_ALLOW_CREDENTIALS:false}
+  max-age: ${CORS_MAX_AGE:86400}
 
 # JWT Configuration
 jwt:

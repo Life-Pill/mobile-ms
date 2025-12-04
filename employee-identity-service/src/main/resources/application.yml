@@ -163,3 +163,11 @@ springdoc:
     try-it-out-enabled: true
     filter: true
     doc-expansion: none
+
+# CORS Configuration
+cors:
+  allowed-origins: ${CORS_ORIGINS:*}
+  allowed-methods: ${CORS_METHODS:GET,POST,PUT,DELETE,OPTIONS,PATCH}
+  allowed-headers: ${CORS_HEADERS:*}
+  allow-credentials: ${CORS_ALLOW_CREDENTIALS:false}
+  max-age: ${CORS_MAX_AGE:86400}
