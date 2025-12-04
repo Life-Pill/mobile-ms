@@ -1,0 +1,48 @@
+package com.lifepill.identityservice.entity;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import jakarta.persistence.*;
+import java.util.Set;
+
+/**
+ * Entity representing employer bank details.
+ */
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "employer_bank_details")
+public class EmployerBankDetails {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "employer_bank_details_id")
+    private long employerBankDetailsId;
+    
+    @Column(name = "bank_name")
+    private String bankName;
+    
+    @Column(name = "bank_branch_name", nullable = true)
+    private String bankBranchName;
+    
+    @Column(name = "bank_account_number")
+    private String bankAccountNumber;
+    
+    @Column(name = "employer_description")
+    private String employerDescription;
+    
+    @Column(name = "monthly_payment")
+    private double monthlyPayment;
+    
+    @Column(name = "payment_status", nullable = true)
+    private Boolean monthlyPaymentStatus;
+    
+    @Column(name = "employer_id")
+    private long employerId;
+    
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "employerBankDetails")
+    private Set<Employer> employers;
+}
