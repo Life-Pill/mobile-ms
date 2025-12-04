@@ -29,6 +29,7 @@ public class SecurityConfig {
                     "/v3/api-docs/**",
                     "/api-docs/**",
                     "/lifepill/v1/branch/**",
+                    "/lifepill/v1/branch-summary/**",
                     "/lifepill/v1/employer/**"
                 ).permitAll()
                 .anyRequest().authenticated()

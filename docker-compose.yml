@@ -411,7 +411,7 @@ services:
   # Order Service (formerly POS System) - Handles orders, payments, transactions
   order-service:
     build:
-      context: ./pharmacy-pos-main-backend/pos-system
+      context: ./pharmacy-pos-main-backend/order-system
       dockerfile: Dockerfile
     container_name: lifepill-order-service
     ports:
@@ -456,6 +456,9 @@ services:
       - CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS,PATCH}
       - CORS_HEADERS=${CORS_HEADERS:-*}
       - LOG_PATH=/logs
+      # Flyway Database Migrations
+      - FLYWAY_ENABLED=true
+      - HIBERNATE_DDL_AUTO=validate
     volumes:
       - ./logs/order-service:/logs
       - order_uploads:/app/uploads
