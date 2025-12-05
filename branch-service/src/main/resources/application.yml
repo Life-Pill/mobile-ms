@@ -93,7 +93,7 @@ cors:
 # Swagger Configuration
 swagger:
   server:
-    url: ${SWAGGER_SERVER_URL:}
+    url: ${BRANCH_SERVICE_SWAGGER_URL:}
 
 # SpringDoc OpenAPI Configuration
 springdoc:

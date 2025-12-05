@@ -28,7 +28,7 @@
       "title": "Zipkin Tracing",
       "tooltip": "View distributed traces",
       "type": "link",
-      "url": "http://34.9.86.185:9411"
+      "url": "http://34.59.6.212:9411"
     }
   ],
   "liveNow": false,

@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -25,15 +26,27 @@ public class SwaggerConfig {
     @Value("${server.port:8086}")
     private String serverPort;
 
+    @Value("${swagger.server.url:}")
+    private String swaggerServerUrl;
+
     @Bean
     public OpenAPI openAPI() {
-        Server localServer = new Server()
+        List<Server> servers = new ArrayList<>();
+        
+        // Add configured server URL first if provided
+        if (swaggerServerUrl != null && !swaggerServerUrl.isEmpty()) {
+            servers.add(new Server()
+                    .url(swaggerServerUrl)
+                    .description("Primary Server"));
+        }
+        
+        servers.add(new Server()
                 .url("http://localhost:" + serverPort)
-                .description("Local Development Server");
+                .description("Local Development Server"));
 
-        Server gatewayServer = new Server()
+        servers.add(new Server()
                 .url("http://localhost:9191")
-                .description("API Gateway Server");
+                .description("API Gateway Server"));
 
         return new OpenAPI()
                 .info(new Info()
@@ -48,7 +61,7 @@ public class SwaggerConfig {
                         .license(new License()
                                 .name("MIT License")
                                 .url("https://opensource.org/licenses/MIT")))
-                .servers(List.of(localServer, gatewayServer))
+                .servers(servers)
                 .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
                 .components(new Components()
                         .addSecuritySchemes(SECURITY_SCHEME_NAME, new SecurityScheme()

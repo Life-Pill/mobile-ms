@@ -164,6 +164,11 @@ springdoc:
     filter: true
     doc-expansion: none
 
+# Swagger Server Configuration
+swagger:
+  server:
+    url: ${IDENTITY_SERVICE_SWAGGER_URL:}
+
 # CORS Configuration
 cors:
   allowed-origins: ${CORS_ORIGINS:*}

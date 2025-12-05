@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -22,16 +23,28 @@ public class OpenApiConfig {
     
     @Value("${server.port:8085}")
     private String serverPort;
+
+    @Value("${swagger.server.url:}")
+    private String swaggerServerUrl;
     
     @Bean
     public OpenAPI customOpenAPI() {
-        Server localServer = new Server()
-                .url("http://localhost:" + serverPort)
-                .description("Local Development Server");
+        List<Server> servers = new ArrayList<>();
         
-        Server gatewayServer = new Server()
+        // Add configured server URL first if provided
+        if (swaggerServerUrl != null && !swaggerServerUrl.isEmpty()) {
+            servers.add(new Server()
+                    .url(swaggerServerUrl)
+                    .description("Primary Server"));
+        }
+        
+        servers.add(new Server()
+                .url("http://localhost:" + serverPort)
+                .description("Local Development Server"));
+        
+        servers.add(new Server()
                 .url("http://localhost:9191/lifepill/v1/identity")
-                .description("API Gateway Server");
+                .description("API Gateway Server"));
         
         Contact contact = new Contact()
                 .name("LifePill Team")
@@ -64,7 +77,7 @@ public class OpenApiConfig {
         
         return new OpenAPI()
                 .info(info)
-                .servers(List.of(localServer, gatewayServer))
+                .servers(servers)
                 .components(new Components().addSecuritySchemes("bearerAuth", securityScheme))
                 .addSecurityItem(securityRequirement);
     }

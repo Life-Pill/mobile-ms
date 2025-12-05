@@ -81,6 +81,11 @@ springdoc:
     path: /swagger-ui.html
     enabled: true
 
+# Swagger Server Configuration
+swagger:
+  server:
+    url: ${INVENTORY_SERVICE_SWAGGER_URL:}
+
 # CORS Configuration
 cors:
   allowed-origins: ${CORS_ORIGINS:*}

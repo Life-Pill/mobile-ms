@@ -191,6 +191,11 @@ springdoc:
     tags-sorter: alpha
     try-it-out-enabled: true
 
+# Swagger Server Configuration
+swagger:
+  server:
+    url: ${ORDER_SERVICE_SWAGGER_URL:}
+
 # Logging Configuration
 logging:
   level:
