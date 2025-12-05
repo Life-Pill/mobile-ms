@@ -381,6 +381,8 @@ services:
       # Tracing
       - TRACING_ENABLED=true
       - TRACING_SAMPLING_PROBABILITY=1.0
+      # JWT Configuration
+      - JWT_SECRET=${JWT_SECRET}
       # Swagger Configuration
       - BRANCH_SERVICE_SWAGGER_URL=${BRANCH_SERVICE_SWAGGER_URL:-}
     volumes:
@@ -431,6 +433,8 @@ services:
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
       - CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS,PATCH}
       - CORS_HEADERS=${CORS_HEADERS:-*}
+      # JWT Configuration
+      - JWT_SECRET=${JWT_SECRET}
       # Swagger Configuration
       - INVENTORY_SERVICE_SWAGGER_URL=${INVENTORY_SERVICE_SWAGGER_URL:-}
     volumes:
