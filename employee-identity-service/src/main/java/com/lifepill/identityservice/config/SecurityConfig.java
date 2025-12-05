@@ -68,6 +68,8 @@ public class SecurityConfig {
                         .requestMatchers("/lifepill/v1/cashier/**").hasAnyRole("CASHIER", "MANAGER", "OWNER")
                         // All authenticated users
                         .requestMatchers("/lifepill/v1/employer/**").authenticated()
+                        // Session management endpoints - all public for session management
+                        .requestMatchers("/lifepill/v1/session/**").permitAll()
                         // Validation endpoint for other services
                         .requestMatchers("/lifepill/v1/identity/validate/**").permitAll()
                         // All other requests require authentication

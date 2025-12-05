@@ -41,7 +41,7 @@
 
 All seed data uses the following default password:
 - **Password**: `password123`
-- **BCrypt Hash**: `$2a$10$N9qo8uLOickgx2ZMRZoMyu.z..jkPa.8LVi3G.pJqR25KuBp2B2Ki`
+- **BCrypt Hash**: `$2a$10$1P.byW2hXv3kt/gkG5W4puF6AfXh6dB6I6YGJI4xA8DlKDjtRv1Ma`
 
 ---
 

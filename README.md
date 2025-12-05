@@ -19,6 +19,7 @@ This is a **monorepo** that links to the following microservices as Git submodul
 | [`service-registry`](./service-registry) | [Life-Pill/service-registry](https://github.com/Life-Pill/service-registry) | Netflix Eureka Server |
 | [`user-auth`](./user-auth) | [Life-Pill/mobile-auth-user-service](https://github.com/Life-Pill/mobile-auth-user-service) | JWT Authentication Service |
 | [`patient-customer-service`](./patient-customer-service) | [Life-Pill/patient-customer-service](https://github.com/Life-Pill/patient-customer-service) | Patient & Customer Management Service |
+| [`employee-identity-service`](./employee-identity-service) | Employee Identity Service | Employee authentication with Redis session caching |
 
 ### 🔄 Cloning with Submodules
 
@@ -41,29 +42,18 @@ git submodule update --remote --merge
 | **Service Registry** | 8761 | Netflix Eureka Server for service discovery |
 | **Config Server** | 8888 | Centralized configuration management |
 | **API Gateway** | 9191 | Single entry point with routing, load balancing, and circuit breaker |
-| **User Auth Service** | 8080 | JWT-based authentication service |
+| **User Auth Service** | 8080 | JWT-based authentication service (Mobile) |
+| **Identity Service** | 8085 | Employee authentication with Redis session caching |
 | **Patient Customer Service** | 8070 | Patient & customer management, prescriptions, payments |
-| **PostgreSQL** | 5432 | Relational database for user-auth and customer service |
-| **MongoDB** | 27017 | Document database for customer service |
-| **Redis** | 6379 | Cache and rate limiting for API Gateway |
+| **Branch Service** | 8071 | Branch management |
+| **Inventory Service** | 8072 | Inventory management |
+| **Order Service** | 8073 | Order processing |
+| **PostgreSQL** | 5432 | Relational database |
+| **MongoDB** | 27017 | Document database |
+| **Redis** | 6379 | Session caching and rate limiting |
 | **Prometheus** | 9090 | Metrics collection |
 | **Grafana** | 3001 | Metrics visualization |
 | **Zipkin** | 9411 | Distributed tracing |
-
-## Startup Order
-
-**Important:** Services must be started in the following order:
-
-```
-1. PostgreSQL, MongoDB, Redis - Infrastructure
-2. Service Registry (Eureka Server) - Port 8761
-3. Config Server - Port 8888
-4. Zipkin - Port 9411
-5. API Gateway - Port 9191
-6. User Auth Service - Port 8080
-7. Patient Customer Service - Port 8070
-8. Prometheus, Grafana - Monitoring
-```
 
 ## Architecture Diagram
 
@@ -87,17 +77,22 @@ git submodule update --remote --merge
                           │                  │              │   (5432)    │
                           │                  │              └─────────────┘
                           │                  │
-                          │           ┌─────────────────────┐
-                          └──────────▶│ Patient Customer    │
-                                      │ Service (8070)      │
-                                      └──────────┬──────────┘
-                                                 │
-                                    ┌────────────┼────────────┐
-                                    │            │            │
-                             ┌──────▼──────┐ ┌───▼────┐ ┌─────▼─────┐
-                             │  PostgreSQL │ │MongoDB │ │  Stripe   │
-                             │   (5432)    │ │(27017) │ │  (API)    │
-                             └─────────────┘ └────────┘ └───────────┘
+                          ├──────────┐       │
+                          │          │       │
+                          ▼          ▼       │
+              ┌───────────────┐ ┌────────────┴────────┐
+              │   Identity    │ │ Patient Customer    │
+              │ Service(8085) │ │ Service (8070)      │
+              └───────┬───────┘ └──────────┬──────────┘
+                      │                    │
+               ┌──────┴──────┐   ┌─────────┼─────────┐
+               │   Redis     │   │         │         │
+               │   (6379)    │   │         │         │
+               └─────────────┘   ▼         ▼         ▼
+                          ┌──────────┐ ┌───────┐ ┌─────────┐
+                          │PostgreSQL│ │MongoDB│ │ Stripe  │
+                          │  (5432)  │ │(27017)│ │  (API)  │
+                          └──────────┘ └───────┘ └─────────┘
 
                     ┌─────────────────────────────────────────────────┐
                     │                   Monitoring                     │
@@ -106,6 +101,140 @@ git submodule update --remote --merge
                     │  │  (9090)  │  │  (3001)  │  │  (9411)  │       │
                     │  └──────────┘  └──────────┘  └──────────┘       │
                     └─────────────────────────────────────────────────┘
+```
+
+## Pull Architecture (Service Discovery)
+
+The system uses **Pull-based Service Discovery** via Netflix Eureka:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         PULL ARCHITECTURE                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   ┌─────────────┐          1. Register              ┌─────────────────┐     │
+│   │   Service   │ ─────────────────────────────────▶│  Eureka Server  │     │
+│   │  (on start) │                                   │    (8761)       │     │
+│   └─────────────┘                                   └────────┬────────┘     │
+│                                                              │              │
+│                                                              │              │
+│   ┌─────────────┐         2. Pull Registry          ┌───────┴───────┐      │
+│   │ API Gateway │ ◀────────────────────────────────│ Service List  │      │
+│   │   (9191)    │         (Every 30 sec)           └───────────────┘      │
+│   └──────┬──────┘                                                          │
+│          │                                                                  │
+│          │ 3. Route Request (with cached registry)                         │
+│          │                                                                  │
+│          ▼                                                                  │
+│   ┌──────────────────────────────────────────────────────────────────┐     │
+│   │                      MICROSERVICES                                │     │
+│   │                                                                   │     │
+│   │  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐     │     │
+│   │  │ Identity  │  │   User    │  │  Patient  │  │   Order   │     │     │
+│   │  │  Service  │  │   Auth    │  │  Service  │  │  Service  │     │     │
+│   │  │  (8085)   │  │  (8080)   │  │  (8070)   │  │  (8073)   │     │     │
+│   │  └───────────┘  └───────────┘  └───────────┘  └───────────┘     │     │
+│   │                                                                   │     │
+│   │  ┌───────────┐  ┌───────────┐                                    │     │
+│   │  │  Branch   │  │ Inventory │                                    │     │
+│   │  │  Service  │  │  Service  │                                    │     │
+│   │  │  (8071)   │  │  (8072)   │                                    │     │
+│   │  └───────────┘  └───────────┘                                    │     │
+│   └──────────────────────────────────────────────────────────────────┘     │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+PULL FLOW:
+1. Services REGISTER themselves with Eureka on startup
+2. API Gateway PULLS the service registry every 30 seconds
+3. Gateway uses CACHED registry to route requests to services
+4. If a service goes down, it's removed from registry after heartbeat timeout
+```
+
+## Session Management Architecture (Redis Caching)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     SESSION MANAGEMENT FLOW                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────┐    1. Login (password)     ┌──────────────┐                   │
+│  │  Client  │ ──────────────────────────▶│   Identity   │                   │
+│  │  (POS)   │                            │   Service    │                   │
+│  └──────────┘                            └──────┬───────┘                   │
+│       │                                         │                           │
+│       │                                         │ 2. Authenticate           │
+│       │                                         │    & Generate JWT         │
+│       │                                         ▼                           │
+│       │                                  ┌──────────────┐                   │
+│       │                                  │  PostgreSQL  │                   │
+│       │                                  │   (5432)     │                   │
+│       │                                  └──────────────┘                   │
+│       │                                         │                           │
+│       │                                         │ 3. Cache Session          │
+│       │                                         ▼                           │
+│       │                                  ┌──────────────┐                   │
+│       │                                  │    Redis     │                   │
+│       │    ◀──────────────────────────── │   (6379)     │                   │
+│       │    4. Return JWT + Session       │              │                   │
+│       │                                  │  ┌────────┐  │                   │
+│       │                                  │  │Session │  │                   │
+│       │                                  │  │ Data:  │  │                   │
+│       │                                  │  │ -token │  │                   │
+│       │                                  │  │ -user  │  │                   │
+│       │                                  │  │ -expiry│  │                   │
+│       │                                  │  │-revoked│  │                   │
+│       │                                  │  └────────┘  │                   │
+│       │                                  └──────────────┘                   │
+│       │                                                                     │
+│       │    5. Re-login with PIN (from cache)                               │
+│       │ ─────────────────────────────────────────▶                         │
+│       │                                                                     │
+│       │    ◀─────────────────────────────────────                          │
+│       │    6. Return cached session                                        │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+SESSION OPERATIONS:
+┌─────────────────────────────────────────────────────────────────┐
+│ Temporary Logout  │ Keep cache data, set DB inactive           │
+│                   │ User can re-login with PIN                 │
+├───────────────────┼────────────────────────────────────────────┤
+│ Permanent Logout  │ Delete cache data, set DB inactive         │
+│                   │ User must login with password              │
+├───────────────────┼────────────────────────────────────────────┤
+│ Session Valid     │ revoked == false AND expiresAt > now()     │
+└───────────────────┴────────────────────────────────────────────┘
+```
+
+## Identity Service Session Endpoints
+
+| Method | Endpoint | Request Body | Description |
+|--------|----------|--------------|-------------|
+| POST | `/lifepill/v1/auth/authenticate` | `{"employerEmail": "...", "employerPassword": "..."}` | Login with password (caches session) |
+| POST | `/lifepill/v1/auth/authenticate-pin` | `{"employerEmail": "...", "pin": 1234}` | Login with PIN (caches session) |
+| POST | `/lifepill/v1/session/authenticate/cached` | `{"username": "...", "pin": 1234}` | Re-login from cache with PIN |
+| POST | `/lifepill/v1/session/logout/temporary` | `{"username": "..."}` | Temporary logout (keeps cache) |
+| POST | `/lifepill/v1/session/logout/permanent` | `{"username": "..."}` | Permanent logout (removes cache) |
+| GET | `/lifepill/v1/session/get-cached-employer/email/{email}` | - | Get cached session by email |
+| GET | `/lifepill/v1/session/get-all-cached-employers` | - | Get all cached sessions |
+| GET | `/lifepill/v1/session/check/{email}` | - | Check if session is valid |
+
+## Startup Order
+
+**Important:** Services must be started in the following order:
+
+```
+1. PostgreSQL, MongoDB, Redis - Infrastructure
+2. Service Registry (Eureka Server) - Port 8761
+3. Config Server - Port 8888
+4. Zipkin - Port 9411
+5. API Gateway - Port 9191
+6. Identity Service - Port 8085
+7. User Auth Service - Port 8080
+8. Patient Customer Service - Port 8070
+9. Other Services...
+10. Prometheus, Grafana - Monitoring
 ```
 
 ## 🔧 Configuration
@@ -145,27 +274,16 @@ JWT_SECRET=your-jwt-secret-key
 EUREKA_URI=http://localhost:8761/eureka/
 ```
 
-## 🏃‍♂️ Running the Services
-
-### Using Maven
-
+#### Identity Service
 ```bash
-# 1. Start Service Registry
-cd service-registry
-./mvnw spring-boot:run
-
-# 2. Start Config Server (optional)
-cd config-server
-./mvnw spring-boot:run
-
-# 3. Start API Gateway
-cd api-gateway
-./mvnw spring-boot:run
-
-# 4. Start User Auth Service
-cd user-auth
-./mvnw spring-boot:run
+DB_URL=jdbc:postgresql://localhost:5432/identity_service_db
+REDIS_HOST=localhost
+REDIS_PORT=6379
+JWT_SECRET=your-jwt-secret-key
+EUREKA_URI=http://localhost:8761/eureka/
 ```
+
+## 🏃‍♂️ Running the Services
 
 ### Using Docker Compose
 
@@ -209,6 +327,7 @@ After starting with Docker Compose:
 |---------|-----|
 | Eureka Dashboard | http://localhost:8761 |
 | API Gateway | http://localhost:9191 |
+| Identity Service Swagger | http://localhost:8085/swagger-ui/index.html |
 | User Auth Swagger | http://localhost:8080/api/swagger-ui.html |
 | Patient Customer Swagger | http://localhost:8070/swagger-ui.html |
 | Prometheus | http://localhost:9090 |
@@ -234,14 +353,6 @@ Access Eureka Dashboard: `http://localhost:8761`
 - Username: `admin` (default)
 - Password: `admin` (default)
 
-### API Gateway Endpoints
-
-| Endpoint | Description |
-|----------|-------------|
-| `/gateway/health` | Gateway health |
-| `/gateway/services` | List registered services |
-| `/gateway/info` | Gateway information |
-
 ## 🔒 Security Features
 
 ### API Gateway
@@ -251,13 +362,16 @@ Access Eureka Dashboard: `http://localhost:8761`
 - Request/Response logging
 - Authentication header relay
 
+### Identity Service
+- JWT-based authentication
+- BCrypt password encoding
+- PIN-based quick authentication
+- Redis session caching with TTL
+- Session revocation support
+
 ### Service Registry
 - Basic authentication for dashboard
 - Secured actuator endpoints
-
-### Config Server
-- Basic authentication for config endpoints
-- Encrypted property support
 
 ## 🔄 Circuit Breaker Configuration
 
@@ -273,61 +387,6 @@ resilience4j:
         wait-duration-in-open-state: 15s
 ```
 
-## 📝 API Routes
-
-### User Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | User registration |
-| POST | `/api/auth/login` | User login |
-| POST | `/api/auth/refresh` | Refresh token |
-| POST | `/api/auth/logout` | User logout |
-| POST | `/api/auth/forgot-password` | Password reset request |
-
-### User Profile
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/users/me` | Get current user |
-| PUT | `/api/users/me` | Update profile |
-| PUT | `/api/users/me/password` | Change password |
-
-### Patient Customer Service
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/customers` | List all customers |
-| POST | `/api/customers` | Create customer |
-| GET | `/api/customers/{id}` | Get customer by ID |
-| PUT | `/api/customers/{id}` | Update customer |
-| DELETE | `/api/customers/{id}` | Delete customer |
-| GET | `/api/prescriptions` | List prescriptions |
-| POST | `/api/prescriptions` | Create prescription |
-| GET | `/api/medical-records` | List medical records |
-| POST | `/api/medical-records` | Create medical record |
-| POST | `/api/payments/create-intent` | Create Stripe payment intent |
-| POST | `/api/payments/confirm` | Confirm payment |
-| GET | `/api/prescription-orders` | List prescription orders |
-| POST | `/api/prescription-orders` | Create prescription order |
-| GET | `/api/sub-customers` | List sub-customers |
-| POST | `/api/sub-customers` | Create sub-customer |
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-./mvnw test
-
-# Run with coverage
-./mvnw test jacoco:report
-```
-
-## 📚 SOLID Principles Applied
-
-1. **Single Responsibility**: Each service has one responsibility
-2. **Open/Closed**: Configuration-based extension without code changes
-3. **Liskov Substitution**: Standard Spring interfaces used throughout
-4. **Interface Segregation**: Focused filter and handler interfaces
-5. **Dependency Inversion**: Abstraction-based dependencies
-
 ## 🛠️ Technology Stack
 
 - **Java 17**
@@ -337,8 +396,11 @@ resilience4j:
 - **Netflix Eureka** (Service Discovery)
 - **Spring Cloud Config** (Configuration Management)
 - **Resilience4j** (Circuit Breaker)
+- **Spring Data Redis** (Session Caching)
 - **Micrometer + Prometheus** (Metrics)
 - **PostgreSQL** (Database)
+- **MongoDB** (Document Database)
+- **Redis** (Session Cache)
 - **Flyway** (Database Migration)
 - **JWT** (Authentication)
 

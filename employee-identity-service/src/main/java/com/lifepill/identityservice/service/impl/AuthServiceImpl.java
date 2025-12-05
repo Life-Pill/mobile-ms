@@ -15,6 +15,7 @@ import com.lifepill.identityservice.exception.NotFoundException;
 import com.lifepill.identityservice.repository.EmployerRepository;
 import com.lifepill.identityservice.security.EmployerUserDetails;
 import com.lifepill.identityservice.service.AuthService;
+import com.lifepill.identityservice.service.SessionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -42,6 +43,7 @@ public class AuthServiceImpl implements AuthService {
     private final ModelMapper modelMapper;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final SessionService sessionService;
 
     @Override
     public AuthenticationResponseDTO register(RegisterRequestDTO registerRequest) {
@@ -78,6 +80,9 @@ public class AuthServiceImpl implements AuthService {
         String jwtToken = jwtService.generateToken(new EmployerUserDetails(savedEmployer));
         String refreshToken = jwtService.generateRefreshToken(new EmployerUserDetails(savedEmployer));
 
+        // Cache the session
+        sessionService.cacheEmployerSession(savedEmployer.getEmployerEmail(), jwtToken, refreshToken);
+
         return AuthenticationResponseDTO.builder()
                 .accessToken(jwtToken)
                 .refreshToken(refreshToken)
@@ -111,6 +116,9 @@ public class AuthServiceImpl implements AuthService {
             UserDetails employerUserDetails = new EmployerUserDetails(authenticatedEmployer);
             String jwtToken = jwtService.generateToken(employerUserDetails);
             String refreshToken = jwtService.generateRefreshToken(employerUserDetails);
+
+            // Cache the session
+            sessionService.cacheEmployerSession(request.getEmployerEmail(), jwtToken, refreshToken);
 
             log.info("User authenticated successfully: {}", request.getEmployerEmail());
 
@@ -146,6 +154,9 @@ public class AuthServiceImpl implements AuthService {
         UserDetails employerUserDetails = new EmployerUserDetails(employer);
         String jwtToken = jwtService.generateToken(employerUserDetails);
         String refreshToken = jwtService.generateRefreshToken(employerUserDetails);
+
+        // Cache the session
+        sessionService.cacheEmployerSession(request.getEmployerEmail(), jwtToken, refreshToken);
 
         log.info("User authenticated with PIN: {}", request.getEmployerEmail());
 
