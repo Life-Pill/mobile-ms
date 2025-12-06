@@ -22,7 +22,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 300s
 
   # Config Server
   config-server:
@@ -51,7 +51,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 300s
 
   # API Gateway
   api-gateway:
@@ -95,7 +95,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 300s
 
   # User Auth Service
   user-auth:
@@ -133,7 +133,7 @@ services:
       - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
       - TRACING_SAMPLING_PROBABILITY=${TRACING_SAMPLING_PROBABILITY:-1.0}
       # Swagger Configuration
-      - SWAGGER_SERVER_URL=http://34.45.239.242:8080
+      - SWAGGER_SERVER_URL=http://35.208.197.159:8080
       # Flyway Migration
       - FLYWAY_ENABLED=${FLYWAY_ENABLED:-true}
       - JPA_DDL_AUTO=update
@@ -153,7 +153,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
+      start_period: 300s
 
   # PostgreSQL Database
   postgres:
@@ -298,7 +298,7 @@ services:
       - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
       - TRACING_SAMPLING_PROBABILITY=${TRACING_SAMPLING_PROBABILITY:-1.0}
       # Swagger Configuration
-      - CUSTOMER_SERVICE_SWAGGER_URL=http://34.45.239.242:8070
+      - CUSTOMER_SERVICE_SWAGGER_URL=http://35.208.197.159:8070
       # Flyway Migration
       - FLYWAY_ENABLED=${FLYWAY_ENABLED:-true}
       - JPA_DDL_AUTO=update
@@ -320,7 +320,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
+      start_period: 300s
 
   # MongoDB (for Patient Customer Service)
   mongodb:
@@ -384,7 +384,7 @@ services:
       # JWT Configuration
       - JWT_SECRET=${JWT_SECRET}
       # Swagger Configuration
-      - BRANCH_SERVICE_SWAGGER_URL=http://34.45.239.242:8081
+      - BRANCH_SERVICE_SWAGGER_URL=http://35.208.197.159:8081
     volumes:
       - ./logs/branch-service:/logs
     networks:
@@ -401,7 +401,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 40s
+      start_period: 300s
 
   # Inventory Service
   inventory-service:
@@ -436,7 +436,7 @@ services:
       # JWT Configuration
       - JWT_SECRET=${JWT_SECRET}
       # Swagger Configuration
-      - INVENTORY_SERVICE_SWAGGER_URL=http://34.45.239.242:8082
+      - INVENTORY_SERVICE_SWAGGER_URL=http://35.208.197.159:8082
     volumes:
       - ./logs/inventory-service:/logs
     networks:
@@ -453,7 +453,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 40s
+      start_period: 300s
 
   # Order Service (formerly POS System) - Handles orders, payments, transactions
   order-service:
@@ -504,7 +504,7 @@ services:
       - CORS_HEADERS=${CORS_HEADERS:-*}
       - LOG_PATH=/logs
       # Swagger Configuration
-      - ORDER_SERVICE_SWAGGER_URL=http://34.45.239.242:8086
+      - ORDER_SERVICE_SWAGGER_URL=http://35.208.197.159:8086
       # Flyway Database Migrations
       - FLYWAY_ENABLED=true
       - HIBERNATE_DDL_AUTO=validate
@@ -533,7 +533,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 120s
+      start_period: 300s
 
   # Employee Identity Service
   identity-service:
@@ -567,7 +567,7 @@ services:
       - TRACING_SAMPLING_PROBABILITY=1.0
       - LOG_PATH=/logs
       # Swagger Configuration
-      - IDENTITY_SERVICE_SWAGGER_URL=http://34.45.239.242:8085
+      - IDENTITY_SERVICE_SWAGGER_URL=http://35.208.197.159:8085
       # Flyway Migration
       - FLYWAY_ENABLED=${FLYWAY_ENABLED:-true}
       - JPA_DDL_AUTO=update
@@ -591,7 +591,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
+      start_period: 300s
 
 networks:
   lifepill-network:
