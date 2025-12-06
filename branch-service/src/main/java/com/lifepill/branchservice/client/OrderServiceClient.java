@@ -143,17 +143,25 @@ public interface OrderServiceClient {
     /**
      * DTO for daily sales summary from Order Service
      */
-    record DailySalesSummaryDTO(
-        java.time.LocalDate date,
-        long orders,
-        double sales
-    ) {}
+    @lombok.Data
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    class DailySalesSummaryDTO {
+        private java.time.LocalDate date;
+        private long orders;
+        private double sales;
+    }
 
     /**
      * DTO for branch daily sales summary from Order Service
+     * Note: JSON field name is "dailySalesSummary" from Order Service
      */
-    record BranchDailySalesSummaryDTO(
-        Long branchId,
-        List<DailySalesSummaryDTO> dailySales
-    ) {}
+    @lombok.Data
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    class BranchDailySalesSummaryDTO {
+        private Long branchId;
+        @com.fasterxml.jackson.annotation.JsonProperty("dailySalesSummary")
+        private List<DailySalesSummaryDTO> dailySalesSummary;
+    }
 }

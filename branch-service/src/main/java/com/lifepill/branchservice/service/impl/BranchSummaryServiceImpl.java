@@ -98,11 +98,22 @@ public class BranchSummaryServiceImpl implements BranchSummaryService {
             ResponseEntity<ApiResponse<List<OrderServiceClient.BranchDailySalesSummaryDTO>>> response = 
                     orderServiceClient.getAllDailySales();
             
-            if (response.getBody() != null && response.getBody().getData() != null) {
+            log.debug("Response status: {}", response.getStatusCode());
+            log.debug("Response body: {}", response.getBody());
+            
+            // Check if the response is successful (not a fallback)
+            if (response.getStatusCode().is2xxSuccessful() && 
+                response.getBody() != null && 
+                response.getBody().getData() != null &&
+                !response.getBody().getData().isEmpty()) {
+                
+                List<OrderServiceClient.BranchDailySalesSummaryDTO> data = response.getBody().getData();
+                log.info("Received daily sales data for {} branches", data.size());
+                
                 Map<Long, OrderServiceClient.BranchDailySalesSummaryDTO> dailySalesMap = 
-                        response.getBody().getData().stream()
+                        data.stream()
                                 .collect(Collectors.toMap(
-                                        OrderServiceClient.BranchDailySalesSummaryDTO::branchId,
+                                        OrderServiceClient.BranchDailySalesSummaryDTO::getBranchId,
                                         dto -> dto
                                 ));
                 
@@ -111,16 +122,20 @@ public class BranchSummaryServiceImpl implements BranchSummaryService {
                             OrderServiceClient.BranchDailySalesSummaryDTO dailySales = 
                                     dailySalesMap.get(branch.getBranchId());
                             
+                            log.debug("Branch {}: Found daily sales data: {}", branch.getBranchId(), dailySales != null);
+                            
                             List<BranchDailySalesDTO.DailySalesEntryDTO> entries = 
-                                    dailySales != null && dailySales.dailySales() != null
-                                            ? dailySales.dailySales().stream()
+                                    dailySales != null && dailySales.getDailySalesSummary() != null
+                                            ? dailySales.getDailySalesSummary().stream()
                                                     .map(ds -> BranchDailySalesDTO.DailySalesEntryDTO.builder()
-                                                            .date(ds.date())
-                                                            .orderCount(ds.orders())
-                                                            .totalSales(ds.sales())
+                                                            .date(ds.getDate())
+                                                            .orderCount(ds.getOrders())
+                                                            .totalSales(ds.getSales())
                                                             .build())
                                                     .collect(Collectors.toList())
                                             : Collections.emptyList();
+                            
+                            log.debug("Branch {}: Mapped {} daily sales entries", branch.getBranchId(), entries.size());
                             
                             return BranchDailySalesDTO.builder()
                                     .branchId(branch.getBranchId())
@@ -129,12 +144,15 @@ public class BranchSummaryServiceImpl implements BranchSummaryService {
                                     .build();
                         })
                         .collect(Collectors.toList());
+            } else {
+                log.warn("Order Service returned unsuccessful response or empty data. Status: {}", response.getStatusCode());
             }
         } catch (Exception e) {
             log.error("Error fetching daily sales from Order Service", e);
         }
         
         // Return empty summaries if Order Service is unavailable
+        log.warn("Returning empty daily sales summaries");
         return branches.stream()
                 .map(branch -> BranchDailySalesDTO.builder()
                         .branchId(branch.getBranchId())
@@ -159,9 +177,9 @@ public class BranchSummaryServiceImpl implements BranchSummaryService {
                 List<BranchDailySalesDTO.DailySalesEntryDTO> entries = 
                         response.getBody().getData().stream()
                                 .map(ds -> BranchDailySalesDTO.DailySalesEntryDTO.builder()
-                                        .date(ds.date())
-                                        .orderCount(ds.orders())
-                                        .totalSales(ds.sales())
+                                        .date(ds.getDate())
+                                        .orderCount(ds.getOrders())
+                                        .totalSales(ds.getSales())
                                         .build())
                                 .collect(Collectors.toList());
                 

@@ -94,6 +94,30 @@ public class JwtService {
     }
 
     /**
+     * Extracts roles from the JWT token.
+     *
+     * @param token The JWT token from which roles will be extracted.
+     * @return List of roles extracted from the token.
+     */
+    public List<String> extractRoles(String token) {
+        Claims claims = extractAllClaims(token);
+        Object rolesObj = claims.get("roles");
+        if (rolesObj instanceof List<?>) {
+            return (List<String>) rolesObj;
+        } else if (rolesObj instanceof String) {
+            return Arrays.asList(((String) rolesObj).split(","));
+        }
+        
+        // Fallback to authorities if roles not found
+        Object authoritiesObj = claims.get("authorities");
+        if (authoritiesObj instanceof String) {
+            return Arrays.asList(((String) authoritiesObj).split(","));
+        }
+        
+        return new ArrayList<>();
+    }
+
+    /**
      * Extracts a specific claim from the provided JWT token using the given resolver function.
      *
      * @param token          JWT token
