@@ -79,6 +79,8 @@ services:
       - TRACING_ENABLED=${TRACING_ENABLED:-true}
       - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
       - TRACING_SAMPLING_PROBABILITY=${TRACING_SAMPLING_PROBABILITY:-1.0}
+      # JWT Configuration
+      - JWT_SECRET=${JWT_SECRET}
     volumes:
       - ./logs/api-gateway:/logs
     networks:
