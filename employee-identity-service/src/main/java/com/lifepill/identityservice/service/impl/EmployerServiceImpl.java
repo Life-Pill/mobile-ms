@@ -160,6 +160,90 @@ public class EmployerServiceImpl implements EmployerService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<EmployerDTO> getManagersByBranch(Long branchId) {
+        log.info("Getting managers for branch: {}", branchId);
+        return employerRepository.findByBranchIdAndRole(branchId, Role.MANAGER).stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EmployerDTO> getEmployersByBranchAndRole(Long branchId, Role role) {
+        log.info("Getting employers for branch: {} with role: {}", branchId, role);
+        return employerRepository.findByBranchIdAndRole(branchId, role).stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public EmployerDTO changeEmployerRole(Long employerId, Role newRole) {
+        log.info("Changing role for employer {} to {}", employerId, newRole);
+        
+        Employer employer = employerRepository.findById(employerId)
+                .orElseThrow(() -> new NotFoundException("Employer not found with ID: " + employerId));
+        
+        employer.setRole(newRole);
+        Employer savedEmployer = employerRepository.save(employer);
+        
+        log.info("Successfully changed role for employer {} to {}", employerId, newRole);
+        return mapToDTO(savedEmployer);
+    }
+
+    @Override
+    public EmployerDTO createEmployer(Long branchId, com.lifepill.identityservice.dto.request.CreateEmployerRequestDTO requestDTO) {
+        log.info("Creating employer for branch: {}", branchId);
+        
+        // Check if email already exists
+        if (employerRepository.existsByEmployerEmail(requestDTO.getEmployerEmail())) {
+            throw new RuntimeException("Employer with email " + requestDTO.getEmployerEmail() + " already exists");
+        }
+        
+        // Create new employer entity
+        Employer employer = new Employer();
+        employer.setEmployerFirstName(requestDTO.getEmployerFirstName());
+        employer.setEmployerLastName(requestDTO.getEmployerLastName());
+        employer.setEmployerEmail(requestDTO.getEmployerEmail());
+        employer.setEmployerNicName(requestDTO.getEmployerFirstName().toLowerCase());
+        employer.setBranchId(branchId);
+        employer.setActiveStatus(true);
+        
+        // Set default values for required fields
+        employer.setEmployerSalary(50000.0); // Default salary
+        employer.setEmployerPhone("0000000000"); // Default phone
+        employer.setEmployerAddress("Not provided"); // Default address
+        employer.setEmployerNic("000000000V"); // Default NIC
+        employer.setGender(com.lifepill.identityservice.entity.enums.Gender.MALE); // Default gender
+        
+        // Set role
+        if (requestDTO.getRole() != null) {
+            employer.setRole(Role.valueOf(requestDTO.getRole().toUpperCase()));
+        } else {
+            employer.setRole(Role.OTHER);
+        }
+        
+        // Set pin
+        if (requestDTO.getPin() != null) {
+            employer.setPin(requestDTO.getPin());
+        } else {
+            employer.setPin(1234); // Default pin
+        }
+        
+        // Hash password if provided
+        if (requestDTO.getEmployerPassword() != null) {
+            org.springframework.security.crypto.password.PasswordEncoder passwordEncoder = 
+                new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+            employer.setEmployerPassword(passwordEncoder.encode(requestDTO.getEmployerPassword()));
+        }
+        
+        Employer savedEmployer = employerRepository.save(employer);
+        log.info("Created employer with ID: {}", savedEmployer.getEmployerId());
+        
+        return mapToDTO(savedEmployer);
+    }
+
     private EmployerDTO mapToDTO(Employer employer) {
         EmployerDTO dto = modelMapper.map(employer, EmployerDTO.class);
         dto.setActiveStatus(employer.isActiveStatus());

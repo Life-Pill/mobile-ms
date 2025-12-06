@@ -1,6 +1,7 @@
 package com.lifepill.identityservice.controller;
 
 import com.lifepill.identityservice.dto.EmployerDTO;
+import com.lifepill.identityservice.dto.request.CreateEmployerRequestDTO;
 import com.lifepill.identityservice.entity.enums.Role;
 import com.lifepill.identityservice.service.EmployerService;
 import com.lifepill.identityservice.util.StandardResponse;
@@ -145,4 +146,55 @@ public class EmployerController {
         List<EmployerDTO> employers = employerService.getActiveEmployersByBranch(branchId);
         return ResponseEntity.ok(new StandardResponse(200, "Active employers retrieved", employers));
     }
+
+    @GetMapping("/get-managers-by-branch")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+    @Operation(summary = "Get managers by branch (query param)")
+    public ResponseEntity<StandardResponse> getManagersByBranch(@RequestParam Long branchId) {
+        log.info("Get managers by branch: {}", branchId);
+        List<EmployerDTO> managers = employerService.getManagersByBranch(branchId);
+        return ResponseEntity.ok(new StandardResponse(200, "Managers retrieved", managers));
+    }
+
+    @GetMapping("/get-by-branch-and-role")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+    @Operation(summary = "Get employers by branch and role")
+    public ResponseEntity<StandardResponse> getEmployersByBranchAndRole(
+            @RequestParam Long branchId,
+            @RequestParam Role role) {
+        log.info("Get employers by branch {} and role {}", branchId, role);
+        List<EmployerDTO> employers = employerService.getEmployersByBranchAndRole(branchId, role);
+        return ResponseEntity.ok(new StandardResponse(200, "Employers retrieved", employers));
+    }
+
+    @GetMapping("/get-by-id")
+    @Operation(summary = "Get employer by ID (query param)")
+    public ResponseEntity<StandardResponse> getEmployerByIdParam(@RequestParam Long employerId) {
+        log.info("Get employer by ID (param): {}", employerId);
+        EmployerDTO employer = employerService.getEmployerById(employerId);
+        return ResponseEntity.ok(new StandardResponse(200, "Employer retrieved", employer));
+    }
+
+    @PutMapping("/change-role")
+    @PreAuthorize("hasRole('OWNER')")
+    @Operation(summary = "Change employer role")
+    public ResponseEntity<StandardResponse> changeEmployerRole(
+            @RequestParam Long employerId,
+            @RequestParam Role newRole) {
+        log.info("Change role for employer {} to {}", employerId, newRole);
+        EmployerDTO employer = employerService.changeEmployerRole(employerId, newRole);
+        return ResponseEntity.ok(new StandardResponse(200, "Role changed successfully", employer));
+    }
+
+    @PostMapping("/create")
+    @PreAuthorize("hasRole('OWNER')")
+    @Operation(summary = "Create new employer")
+    public ResponseEntity<StandardResponse> createEmployer(
+            @RequestParam Long branchId,
+            @RequestBody CreateEmployerRequestDTO requestDTO) {
+        log.info("Create employer for branch: {}", branchId);
+        EmployerDTO employer = employerService.createEmployer(branchId, requestDTO);
+        return ResponseEntity.status(201).body(new StandardResponse(200, "Employer created successfully", employer));
+    }
 }
+

@@ -6,7 +6,10 @@ import feign.Retryer;
 import feign.codec.ErrorDecoder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -34,14 +37,44 @@ public class FeignClientConfig {
     }
 
     /**
-     * Request interceptor to add common headers
-     * Can be used to pass trace IDs, authentication tokens, etc.
+     * Request interceptor to propagate auth headers and add common headers.
+     * Propagates Authorization header to downstream services.
      */
     @Bean
     public RequestInterceptor requestInterceptor() {
         return requestTemplate -> {
             requestTemplate.header("X-Service-Name", "BRANCH-SERVICE");
             requestTemplate.header("Content-Type", "application/json");
+            
+            // Propagate auth headers from the incoming request
+            ServletRequestAttributes attributes = 
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+                
+            if (attributes != null) {
+                HttpServletRequest request = attributes.getRequest();
+                
+                // Forward Authorization header
+                String authHeader = request.getHeader("Authorization");
+                if (authHeader != null) {
+                    requestTemplate.header("Authorization", authHeader);
+                }
+                
+                // Forward X-Auth headers from API Gateway
+                String authUser = request.getHeader("X-Auth-User");
+                if (authUser != null) {
+                    requestTemplate.header("X-Auth-User", authUser);
+                }
+                
+                String authRoles = request.getHeader("X-Auth-Roles");
+                if (authRoles != null) {
+                    requestTemplate.header("X-Auth-Roles", authRoles);
+                }
+                
+                String authValidated = request.getHeader("X-Auth-Validated");
+                if (authValidated != null) {
+                    requestTemplate.header("X-Auth-Validated", authValidated);
+                }
+            }
         };
     }
 

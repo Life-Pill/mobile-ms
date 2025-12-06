@@ -1,6 +1,7 @@
 package com.lifepill.identityservice.service;
 
 import com.lifepill.identityservice.dto.EmployerDTO;
+import com.lifepill.identityservice.dto.request.CreateEmployerRequestDTO;
 import com.lifepill.identityservice.dto.request.RegisterRequestDTO;
 import com.lifepill.identityservice.entity.enums.Role;
 
@@ -90,4 +91,40 @@ public interface EmployerService {
      * @return List of active employers
      */
     List<EmployerDTO> getActiveEmployersByBranch(Long branchId);
+
+    /**
+     * Gets managers (MANAGER role) by branch.
+     *
+     * @param branchId The branch ID
+     * @return List of managers in the branch
+     */
+    List<EmployerDTO> getManagersByBranch(Long branchId);
+
+    /**
+     * Gets employers by branch and role.
+     *
+     * @param branchId The branch ID
+     * @param role The role to filter by
+     * @return List of employers with the role in the branch
+     */
+    List<EmployerDTO> getEmployersByBranchAndRole(Long branchId, Role role);
+
+    /**
+     * Changes an employer's role.
+     *
+     * @param employerId The employer ID
+     * @param newRole The new role
+     * @return The updated employer DTO
+     */
+    EmployerDTO changeEmployerRole(Long employerId, Role newRole);
+
+    /**
+     * Creates a new employer.
+     *
+     * @param branchId The branch ID
+     * @param requestDTO The employer creation data
+     * @return The created employer DTO
+     */
+    EmployerDTO createEmployer(Long branchId, CreateEmployerRequestDTO requestDTO);
 }
+
