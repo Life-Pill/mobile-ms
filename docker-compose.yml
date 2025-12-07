@@ -573,6 +573,13 @@ services:
       # Flyway Migration
       - FLYWAY_ENABLED=${FLYWAY_ENABLED:-true}
       - JPA_DDL_AUTO=update
+      # Email Configuration
+      - MAIL_HOST=${MAIL_HOST:-smtp.gmail.com}
+      - MAIL_PORT=${MAIL_PORT:-587}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      # Password Reset URL
+      - PASSWORD_RESET_URL=http://35.208.197.159:9191/reset-password
     volumes:
       - ./logs/identity-service:/logs
     networks:
@@ -595,6 +602,81 @@ services:
       retries: 5
       start_period: 300s
 
+  # ===============================================
+  # ELK STACK - Centralized Logging
+  # ===============================================
+  
+  # Elasticsearch - Log Storage
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: lifepill-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - cluster.name=lifepill-logs
+      - node.name=lifepill-es-node
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - lifepill-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Kibana - Log Visualization
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: lifepill-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - SERVER_NAME=lifepill-kibana
+      - SERVER_HOST=0.0.0.0
+    ports:
+      - "5601:5601"
+    networks:
+      - lifepill-network
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Filebeat - Log Collection from all containers
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.11.0
+    container_name: lifepill-filebeat
+    user: root
+    command: filebeat -e -strict.perms=false
+    volumes:
+      # Filebeat configuration
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      # Docker socket for metadata
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Docker container logs
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      # System logs (optional)
+      - /var/log:/var/log:ro
+    networks:
+      - lifepill-network
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - KIBANA_HOST=http://kibana:5601
+    restart: unless-stopped
+
 networks:
   lifepill-network:
     driver: bridge
@@ -606,3 +688,4 @@ volumes:
   grafana_data:
   mongodb_data:
   order_uploads:
+  elasticsearch_data:

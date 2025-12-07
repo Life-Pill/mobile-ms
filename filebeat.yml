@@ -1,0 +1,98 @@
+# Filebeat Configuration for Docker Container Log Collection
+# Collects logs from all Docker containers and sends to Elasticsearch
+
+filebeat.config:
+  modules:
+    path: ${path.config}/modules.d/*.yml
+    reload.enabled: false
+
+# Autodiscover configuration for Docker containers
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      # Use Docker labels for hints
+      hints.enabled: true
+      # Include container metadata
+      hints.default_config:
+        type: container
+        paths:
+          - /var/lib/docker/containers/${data.docker.container.id}/*.log
+
+# Input configuration for container logs
+filebeat.inputs:
+  - type: container
+    enabled: true
+    # Path to Docker container logs
+    paths:
+      - '/var/lib/docker/containers/*/*.log'
+    # Stream type (all, stdout, stderr)
+    stream: all
+    # Include container fields
+    fields_under_root: true
+    # Parse JSON logs
+    json.keys_under_root: true
+    json.add_error_key: true
+    json.message_key: message
+    
+# Processors to enrich logs with metadata
+processors:
+  # Add Docker metadata (container name, ID, image, labels)
+  - add_docker_metadata:
+      host: "unix:///var/run/docker.sock"
+      match_fields: ["container.id"]
+      match_pids: ["process.pid", "process.ppid"]
+      match_source: true
+      match_source_index: 4
+      match_short_id: true
+      cleanup_timeout: 60
+      labels.dedot: true
+      # Add container labels
+      labels.enabled: true
+  
+  # Add hostname
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+  
+  # Add cloud metadata if running in cloud
+  - add_cloud_metadata: ~
+  
+  # Decode JSON fields in message
+  - decode_json_fields:
+      fields: ["message"]
+      process_array: false
+      max_depth: 1
+      target: ""
+      overwrite_keys: true
+      add_error_key: true
+
+# Elasticsearch output configuration
+output.elasticsearch:
+  # Elasticsearch hosts
+  hosts: ["elasticsearch:9200"]
+  # Index naming pattern
+  index: "filebeat-%{[agent.version]}-%{+yyyy.MM.dd}"
+  # Number of workers
+  workers: 1
+  # Compression level (0-9, 0=no compression)
+  compression_level: 0
+  # Bulk max size
+  bulk_max_size: 50
+
+# Index lifecycle
+setup.ilm.enabled: false
+setup.template.name: "filebeat"
+setup.template.pattern: "filebeat-*"
+setup.template.settings:
+  index.number_of_shards: 1
+  index.number_of_replicas: 0
+
+# Kibana configuration for dashboards
+setup.kibana:
+  host: "kibana:5601"
+
+# Logging configuration
+logging.level: info
+logging.to_files: false
+logging.to_syslog: false
+logging.json: true
+logging.metrics.enabled: false

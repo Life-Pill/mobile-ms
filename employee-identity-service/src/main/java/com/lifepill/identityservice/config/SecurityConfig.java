@@ -66,11 +66,14 @@ public class SecurityConfig {
                         .requestMatchers("/lifepill/v1/manager/**").hasAnyRole("MANAGER", "OWNER")
                         // Cashier, manager, and owner endpoints
                         .requestMatchers("/lifepill/v1/cashier/**").hasAnyRole("CASHIER", "MANAGER", "OWNER")
-                        // All authenticated users
+                        // Public endpoints - Password reset (MUST be before /employer/** rule)
+                        .requestMatchers("/lifepill/v1/employer/forgot-password").permitAll()
+                        .requestMatchers("/lifepill/v1/employer/reset-password").permitAll()
+                        // All other employer endpoints require authentication
                         .requestMatchers("/lifepill/v1/employer/**").authenticated()
-                        // Session management endpoints - all public for session management
+                        // Public endpoints - Session and validation
                         .requestMatchers("/lifepill/v1/session/**").permitAll()
-                        // Validation endpoint for other services
+                        // Public endpoints - Identity validation
                         .requestMatchers("/lifepill/v1/identity/validate/**").permitAll()
                         // All other requests require authentication
                         .anyRequest().authenticated()

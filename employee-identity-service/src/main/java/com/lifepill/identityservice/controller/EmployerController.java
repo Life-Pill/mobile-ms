@@ -4,10 +4,15 @@ import com.lifepill.identityservice.dto.EmployerBankDetailsDTO;
 import com.lifepill.identityservice.dto.EmployerDTO;
 import com.lifepill.identityservice.dto.EmployerWithBankDetailsDTO;
 import com.lifepill.identityservice.dto.request.CreateEmployerRequestDTO;
+import com.lifepill.identityservice.dto.request.ForgotPasswordRequestDTO;
+import com.lifepill.identityservice.dto.request.ResetPasswordDTO;
 import com.lifepill.identityservice.dto.request.UpdateEmployerAccountDTO;
 import com.lifepill.identityservice.dto.request.UpdateEmployerBankDetailsDTO;
+import com.lifepill.identityservice.dto.request.UpdatePasswordDTO;
+import com.lifepill.identityservice.dto.request.UpdatePinDTO;
 import com.lifepill.identityservice.entity.enums.Role;
 import com.lifepill.identityservice.service.EmployerService;
+import com.lifepill.identityservice.service.PasswordService;
 import com.lifepill.identityservice.util.StandardResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,6 +37,7 @@ import java.util.List;
 public class EmployerController {
 
     private final EmployerService employerService;
+    private final PasswordService passwordService;
 
     @GetMapping("/{employerId}")
     @Operation(summary = "Get employer by ID")
@@ -268,5 +275,49 @@ public class EmployerController {
         log.info("Update account details for employer ID: {}", dto.getEmployerId());
         EmployerDTO updatedEmployer = employerService.updateEmployerAccountDetails(dto);
         return ResponseEntity.ok(new StandardResponse(200, "Account details updated successfully", updatedEmployer));
+    }
+
+    // ========== Password Management Endpoints ==========
+
+    @PutMapping("/updateRecentPin")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Update employer PIN", description = "Updates PIN with role hierarchy validation")
+    public ResponseEntity<StandardResponse> updateRecentPin(
+            Authentication authentication,
+            @Valid @RequestBody UpdatePinDTO dto) {
+        String requesterEmail = authentication.getName();
+        log.info("Update PIN for employer {} requested by {}", dto.getEmployerId(), requesterEmail);
+        String message = passwordService.updatePinByEmail(requesterEmail, dto);
+        return ResponseEntity.ok(new StandardResponse(200, message, null));
+    }
+
+    @PutMapping("/updatePassword")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Update employer password", description = "Updates password with role hierarchy validation")
+    public ResponseEntity<StandardResponse> updatePassword(
+            Authentication authentication,
+            @Valid @RequestBody UpdatePasswordDTO dto) {
+        String requesterEmail = authentication.getName();
+        log.info("Update password for employer {} requested by {}", dto.getEmployerId(), requesterEmail);
+        String message = passwordService.updatePasswordByEmail(requesterEmail, dto);
+        return ResponseEntity.ok(new StandardResponse(200, message, null));
+    }
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Request password reset", description = "Sends password reset email (public endpoint)")
+    public ResponseEntity<StandardResponse> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequestDTO dto) {
+        log.info("Forgot password request for email: {}", dto.getEmail());
+        String message = passwordService.forgotPassword(dto);
+        return ResponseEntity.ok(new StandardResponse(200, message, null));
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Reset password with token", description = "Resets password using email token (public endpoint)")
+    public ResponseEntity<StandardResponse> resetPassword(
+            @Valid @RequestBody ResetPasswordDTO dto) {
+        log.info("Reset password request with token");
+        String message = passwordService.resetPassword(dto);
+        return ResponseEntity.ok(new StandardResponse(200, message, null));
     }
 }
