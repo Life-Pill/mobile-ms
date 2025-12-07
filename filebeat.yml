@@ -6,17 +6,11 @@ filebeat.config:
     path: ${path.config}/modules.d/*.yml
     reload.enabled: false
 
-# Autodiscover configuration for Docker containers
-filebeat.autodiscover:
-  providers:
-    - type: docker
-      # Use Docker labels for hints
-      hints.enabled: true
-      # Include container metadata
-      hints.default_config:
-        type: container
-        paths:
-          - /var/lib/docker/containers/${data.docker.container.id}/*.log
+# Autodiscover disabled due to Docker API version compatibility
+# Using simple container input instead
+# filebeat.autodiscover:
+#   providers:
+#     - type: docker
 
 # Input configuration for container logs
 filebeat.inputs:
@@ -27,12 +21,7 @@ filebeat.inputs:
       - '/var/lib/docker/containers/*/*.log'
     # Stream type (all, stdout, stderr)
     stream: all
-    # Include container fields
-    fields_under_root: true
-    # Parse JSON logs
-    json.keys_under_root: true
-    json.add_error_key: true
-    json.message_key: message
+    # Docker logs are already in JSON format, don't try to parse again
     
 # Processors to enrich logs with metadata
 processors:
@@ -55,15 +44,6 @@ processors:
   
   # Add cloud metadata if running in cloud
   - add_cloud_metadata: ~
-  
-  # Decode JSON fields in message
-  - decode_json_fields:
-      fields: ["message"]
-      process_array: false
-      max_depth: 1
-      target: ""
-      overwrite_keys: true
-      add_error_key: true
 
 # Elasticsearch output configuration
 output.elasticsearch:
