@@ -1,8 +1,12 @@
 package com.lifepill.identityservice.service;
 
+import com.lifepill.identityservice.dto.EmployerBankDetailsDTO;
 import com.lifepill.identityservice.dto.EmployerDTO;
+import com.lifepill.identityservice.dto.EmployerWithBankDetailsDTO;
 import com.lifepill.identityservice.dto.request.CreateEmployerRequestDTO;
 import com.lifepill.identityservice.dto.request.RegisterRequestDTO;
+import com.lifepill.identityservice.dto.request.UpdateEmployerAccountDTO;
+import com.lifepill.identityservice.dto.request.UpdateEmployerBankDetailsDTO;
 import com.lifepill.identityservice.entity.enums.Role;
 
 import java.util.List;
@@ -126,5 +130,60 @@ public interface EmployerService {
      * @return The created employer DTO
      */
     EmployerDTO createEmployer(Long branchId, CreateEmployerRequestDTO requestDTO);
+
+    /**
+     * Gets all employer bank details.
+     *
+     * @return List of all bank details
+     */
+    List<EmployerBankDetailsDTO> getAllEmployerBankDetails();
+
+    /**
+     * Gets all employers with their bank details.
+     *
+     * @return List of employers with bank details
+     */
+    List<EmployerWithBankDetailsDTO> getAllEmployersWithBankDetails();
+
+    /**
+     * Gets employer with bank details by ID.
+     *
+     * @param employerId The employer ID
+     * @return Employer with bank details
+     */
+    EmployerWithBankDetailsDTO getEmployerWithBankDetails(Long employerId);
+
+    /**
+     * Gets bank details for a specific employer.
+     *
+     * @param employerId The employer ID
+     * @return Bank details DTO
+     */
+    EmployerBankDetailsDTO getEmployerBankDetailsById(Long employerId);
+
+    /**
+     * Gets all employers filtered by active status.
+     *
+     * @param status The active status to filter by
+     * @return List of employers with the specified status
+     */
+    List<EmployerDTO> getAllEmployersByActiveStatus(boolean status);
+
+    /**
+     * Updates employer bank details.
+     *
+     * @param employerId The employer ID
+     * @param dto The updated bank details
+     * @return Updated employer DTO
+     */
+    EmployerDTO updateEmployerBankDetails(Long employerId, UpdateEmployerBankDetailsDTO dto);
+
+    /**
+     * Updates employer account details.
+     *
+     * @param dto The updated account information
+     * @return Updated employer DTO
+     */
+    EmployerDTO updateEmployerAccountDetails(UpdateEmployerAccountDTO dto);
 }
 

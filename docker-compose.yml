@@ -135,7 +135,7 @@ services:
       - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
       - TRACING_SAMPLING_PROBABILITY=${TRACING_SAMPLING_PROBABILITY:-1.0}
       # Swagger Configuration
-      - SWAGGER_SERVER_URL=http://35.208.197.159:8080
+      - SWAGGER_SERVER_URL=http://35.208.197.159:8080/api
       # Flyway Migration
       - FLYWAY_ENABLED=${FLYWAY_ENABLED:-true}
       - JPA_DDL_AUTO=update

@@ -24,4 +24,13 @@ public interface BranchServiceClient {
      */
     @GetMapping("/lifepill/v1/branch/{branchId}/exists")
     ResponseEntity<MicroserviceApiResponse<Boolean>> branchExists(@PathVariable Long branchId);
+
+    /**
+     * Gets branch details by ID.
+     *
+     * @param branchId The ID of the branch
+     * @return Branch information
+     */
+    @GetMapping("/lifepill/v1/branch/{branchId}")
+    ResponseEntity<MicroserviceApiResponse<Object>> getBranchById(@PathVariable Long branchId);
 }

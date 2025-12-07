@@ -87,4 +87,12 @@ public interface EmployerRepository extends JpaRepository<Employer, Long> {
      * @return List of employers matching the criteria
      */
     List<Employer> findByBranchIdAndIsActiveStatus(Long branchId, boolean isActiveStatus);
+
+    /**
+     * Finds all employers by active status.
+     *
+     * @param isActiveStatus The active status
+     * @return List of employers with the specified status
+     */
+    List<Employer> findByIsActiveStatus(boolean isActiveStatus);
 }

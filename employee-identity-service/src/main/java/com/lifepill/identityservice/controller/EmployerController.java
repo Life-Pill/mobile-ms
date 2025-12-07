@@ -1,12 +1,17 @@
 package com.lifepill.identityservice.controller;
 
+import com.lifepill.identityservice.dto.EmployerBankDetailsDTO;
 import com.lifepill.identityservice.dto.EmployerDTO;
+import com.lifepill.identityservice.dto.EmployerWithBankDetailsDTO;
 import com.lifepill.identityservice.dto.request.CreateEmployerRequestDTO;
+import com.lifepill.identityservice.dto.request.UpdateEmployerAccountDTO;
+import com.lifepill.identityservice.dto.request.UpdateEmployerBankDetailsDTO;
 import com.lifepill.identityservice.entity.enums.Role;
 import com.lifepill.identityservice.service.EmployerService;
 import com.lifepill.identityservice.util.StandardResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -196,5 +201,72 @@ public class EmployerController {
         EmployerDTO employer = employerService.createEmployer(branchId, requestDTO);
         return ResponseEntity.status(201).body(new StandardResponse(200, "Employer created successfully", employer));
     }
-}
 
+    // ========== Bank Details Management Endpoints ==========
+
+    @GetMapping("/get-all-employers-bank-details")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+    @Operation(summary = "Get all employer bank details", description = "Retrieves bank details for all employers")
+    public ResponseEntity<StandardResponse> getAllEmployerBankDetails() {
+        log.info("Get all employer bank details");
+        List<EmployerBankDetailsDTO> bankDetails = employerService.getAllEmployerBankDetails();
+        return ResponseEntity.ok(new StandardResponse(200, "Bank details retrieved", bankDetails));
+    }
+
+    @GetMapping("/employers-with-bank-details")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+    @Operation(summary = "Get all employers with bank details", description = "Retrieves all employers including their bank account information")
+    public ResponseEntity<StandardResponse> getAllEmployersWithBankDetails() {
+        log.info("Get all employers with bank details");
+        List<EmployerWithBankDetailsDTO> employers = employerService.getAllEmployersWithBankDetails();
+        return ResponseEntity.ok(new StandardResponse(200, "Employers with bank details retrieved", employers));
+    }
+
+    @GetMapping("/with-bank-details/{employerId}")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'CASHIER')")
+    @Operation(summary = "Get employer with bank details by ID", description = "Retrieves complete employer information including bank details")
+    public ResponseEntity<StandardResponse> getEmployerWithBankDetails(@PathVariable Long employerId) {
+        log.info("Get employer with bank details for ID: {}", employerId);
+        EmployerWithBankDetailsDTO employer = employerService.getEmployerWithBankDetails(employerId);
+        return ResponseEntity.ok(new StandardResponse(200, "Employer with bank details retrieved", employer));
+    }
+
+    @GetMapping("/bank-details/{employerId}")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+    @Operation(summary = "Get bank details by employer ID", description = "Retrieves only the bank details for a specific employer")
+    public ResponseEntity<StandardResponse> getEmployerBankDetailsById(@PathVariable Long employerId) {
+        log.info("Get bank details for employer ID: {}", employerId);
+        EmployerBankDetailsDTO bankDetails = employerService.getEmployerBankDetailsById(employerId);
+        return ResponseEntity.ok(new StandardResponse(200, "Bank details retrieved", bankDetails));
+    }
+
+    @GetMapping("/get-all-employers-by-active-state/{status}")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+    @Operation(summary = "Get employers by active status", description = "Filters employers by their active/inactive status")
+    public ResponseEntity<StandardResponse> getAllEmployersByActiveStatus(@PathVariable boolean status) {
+        log.info("Get all employers by active status: {}", status);
+        List<EmployerDTO> employers = employerService.getAllEmployersByActiveStatus(status);
+        return ResponseEntity.ok(new StandardResponse(200, "Employers retrieved", employers));
+    }
+
+    @PutMapping("/updateEmployerBankAccountDetailsWithId/{employerId}")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+    @Operation(summary = "Update employer bank details", description = "Updates bank account information for an employer")
+    public ResponseEntity<StandardResponse> updateEmployerBankDetails(
+            @PathVariable Long employerId,
+            @Valid @RequestBody UpdateEmployerBankDetailsDTO dto) {
+        log.info("Update bank details for employer ID: {}", employerId);
+        EmployerDTO updatedEmployer = employerService.updateEmployerBankDetails(employerId, dto);
+        return ResponseEntity.ok(new StandardResponse(200, "Bank details updated successfully", updatedEmployer));
+    }
+
+    @PutMapping("/updateAccountDetails")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'CASHIER')")
+    @Operation(summary = "Update employer account details", description = "Updates personal information (name, address, DOB, gender)")
+    public ResponseEntity<StandardResponse> updateEmployerAccountDetails(
+            @Valid @RequestBody UpdateEmployerAccountDTO dto) {
+        log.info("Update account details for employer ID: {}", dto.getEmployerId());
+        EmployerDTO updatedEmployer = employerService.updateEmployerAccountDetails(dto);
+        return ResponseEntity.ok(new StandardResponse(200, "Account details updated successfully", updatedEmployer));
+    }
+}

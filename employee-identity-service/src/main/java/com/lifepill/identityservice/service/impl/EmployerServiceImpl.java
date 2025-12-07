@@ -2,10 +2,16 @@ package com.lifepill.identityservice.service.impl;
 
 import com.lifepill.identityservice.client.BranchServiceClient;
 import com.lifepill.identityservice.client.dto.MicroserviceApiResponse;
+import com.lifepill.identityservice.dto.EmployerBankDetailsDTO;
 import com.lifepill.identityservice.dto.EmployerDTO;
+import com.lifepill.identityservice.dto.EmployerWithBankDetailsDTO;
+import com.lifepill.identityservice.dto.request.UpdateEmployerAccountDTO;
+import com.lifepill.identityservice.dto.request.UpdateEmployerBankDetailsDTO;
 import com.lifepill.identityservice.entity.Employer;
+import com.lifepill.identityservice.entity.EmployerBankDetails;
 import com.lifepill.identityservice.entity.enums.Role;
 import com.lifepill.identityservice.exception.NotFoundException;
+import com.lifepill.identityservice.repository.EmployerBankDetailsRepository;
 import com.lifepill.identityservice.repository.EmployerRepository;
 import com.lifepill.identityservice.service.EmployerService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +34,7 @@ import java.util.stream.Collectors;
 public class EmployerServiceImpl implements EmployerService {
 
     private final EmployerRepository employerRepository;
+    private final EmployerBankDetailsRepository employerBankDetailsRepository;
     private final BranchServiceClient branchServiceClient;
     private final ModelMapper modelMapper;
 
@@ -244,9 +251,134 @@ public class EmployerServiceImpl implements EmployerService {
         return mapToDTO(savedEmployer);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<EmployerBankDetailsDTO> getAllEmployerBankDetails() {
+        log.info("Getting all employer bank details");
+        return employerBankDetailsRepository.findAll().stream()
+                .map(this::mapBankDetailsToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EmployerWithBankDetailsDTO> getAllEmployersWithBankDetails() {
+        log.info("Getting all employers with bank details");
+        return employerRepository.findAll().stream()
+                .map(this::mapToEmployerWithBankDetailsDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EmployerWithBankDetailsDTO getEmployerWithBankDetails(Long employerId) {
+        log.info("Getting employer with bank details for ID: {}", employerId);
+        Employer employer = employerRepository.findById(employerId)
+                .orElseThrow(() -> new NotFoundException("Employer not found with ID: " + employerId));
+        return mapToEmployerWithBankDetailsDTO(employer);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EmployerBankDetailsDTO getEmployerBankDetailsById(Long employerId) {
+        log.info("Getting bank details for employer ID: {}", employerId);
+        Employer employer = employerRepository.findById(employerId)
+                .orElseThrow(() -> new NotFoundException("Employer not found with ID: " + employerId));
+        
+        if (employer.getEmployerBankDetails() == null) {
+            throw new NotFoundException("Bank details not found for employer ID: " + employerId);
+        }
+        
+        return mapBankDetailsToDTO(employer.getEmployerBankDetails());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EmployerDTO> getAllEmployersByActiveStatus(boolean status) {
+        log.info("Getting all employers with active status: {}", status);
+        return employerRepository.findByIsActiveStatus(status).stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public EmployerDTO updateEmployerBankDetails(Long employerId, UpdateEmployerBankDetailsDTO dto) {
+        log.info("Updating bank details for employer ID: {}", employerId);
+        
+        Employer employer = employerRepository.findById(employerId)
+                .orElseThrow(() -> new NotFoundException("Employer not found with ID: " + employerId));
+        
+        EmployerBankDetails bankDetails;
+        
+        if (employer.getEmployerBankDetails() != null) {
+            // Update existing bank details
+            bankDetails = employer.getEmployerBankDetails();
+            log.info("Updating existing bank details ID: {}", bankDetails.getEmployerBankDetailsId());
+        } else {
+            // Create new bank details
+            bankDetails = new EmployerBankDetails();
+            log.info("Creating new bank details for employer ID: {}", employerId);
+        }
+        
+        // Update fields
+        bankDetails.setBankName(dto.getBankName());
+        bankDetails.setBankBranchName(dto.getBankBranchName());
+        bankDetails.setBankAccountNumber(dto.getBankAccountNumber());
+        bankDetails.setEmployerDescription(dto.getEmployerDescription());
+        bankDetails.setMonthlyPayment(dto.getMonthlyPayment() != null ? dto.getMonthlyPayment() : 0.0);
+        bankDetails.setMonthlyPaymentStatus(dto.getMonthlyPaymentStatus());
+        bankDetails.setEmployerId(employerId);
+        
+        // Save bank details
+        EmployerBankDetails savedBankDetails = employerBankDetailsRepository.save(bankDetails);
+        
+        // Update employer reference
+        employer.setEmployerBankDetails(savedBankDetails);
+        Employer savedEmployer = employerRepository.save(employer);
+        
+        log.info("Successfully updated bank details for employer ID: {}", employerId);
+        return mapToDTO(savedEmployer);
+    }
+
+    @Override
+    public EmployerDTO updateEmployerAccountDetails(UpdateEmployerAccountDTO dto) {
+        log.info("Updating account details for employer ID: {}", dto.getEmployerId());
+        
+        Employer employer = employerRepository.findById(dto.getEmployerId())
+                .orElseThrow(() -> new NotFoundException("Employer not found with ID: " + dto.getEmployerId()));
+        
+        // Update account fields
+        employer.setEmployerFirstName(dto.getEmployerFirstName());
+        employer.setEmployerLastName(dto.getEmployerLastName());
+        employer.setGender(dto.getGender());
+        employer.setEmployerAddress(dto.getEmployerAddress());
+        employer.setDateOfBirth(dto.getDateOfBirth());
+        
+        Employer savedEmployer = employerRepository.save(employer);
+        log.info("Successfully updated account details for employer ID: {}", dto.getEmployerId());
+        
+        return mapToDTO(savedEmployer);
+    }
+
     private EmployerDTO mapToDTO(Employer employer) {
         EmployerDTO dto = modelMapper.map(employer, EmployerDTO.class);
         dto.setActiveStatus(employer.isActiveStatus());
+        return dto;
+    }
+
+    private EmployerBankDetailsDTO mapBankDetailsToDTO(EmployerBankDetails bankDetails) {
+        return modelMapper.map(bankDetails, EmployerBankDetailsDTO.class);
+    }
+
+    private EmployerWithBankDetailsDTO mapToEmployerWithBankDetailsDTO(Employer employer) {
+        EmployerWithBankDetailsDTO dto = modelMapper.map(employer, EmployerWithBankDetailsDTO.class);
+        dto.setActiveStatus(employer.isActiveStatus());
+        
+        // Map bank details if present
+        if (employer.getEmployerBankDetails() != null) {
+            dto.setEmployerBankDetails(mapBankDetailsToDTO(employer.getEmployerBankDetails()));
+        }
+        
         return dto;
     }
 }

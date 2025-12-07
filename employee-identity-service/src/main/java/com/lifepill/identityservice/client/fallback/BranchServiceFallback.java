@@ -15,13 +15,17 @@ public class BranchServiceFallback implements BranchServiceClient {
 
     @Override
     public ResponseEntity<MicroserviceApiResponse<Boolean>> branchExists(Long branchId) {
-        log.warn("Branch Service is unavailable. Fallback called for branchExists({})", branchId);
+        log.warn("Branch Service is unavailable - using fallback response");
         return ResponseEntity.ok(
-                MicroserviceApiResponse.<Boolean>builder()
-                        .code(503)
-                        .message("Branch Service is unavailable")
-                        .data(false)
-                        .build()
+                new MicroserviceApiResponse<Boolean>(503, "Branch Service unavailable", false)
+        );
+    }
+
+    @Override
+    public ResponseEntity<MicroserviceApiResponse<Object>> getBranchById(Long branchId) {
+        log.warn("Branch Service is unavailable - cannot fetch branch details for ID: {}", branchId);
+        return ResponseEntity.ok(
+                new MicroserviceApiResponse<Object>(503, "Branch Service unavailable", null)
         );
     }
 }
