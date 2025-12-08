@@ -5,6 +5,8 @@ import com.lifepill.inventoryservice.dto.ItemDTO;
 import com.lifepill.inventoryservice.dto.ItemRequestDTO;
 import com.lifepill.inventoryservice.dto.PaginatedResponseItemDTO;
 import com.lifepill.inventoryservice.service.ItemService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -43,11 +45,22 @@ public class ItemController {
     @Operation(summary = "Create item with image", description = "Create a new item with an image")
     public ResponseEntity<ApiResponse<ItemDTO>> saveItemWithImage(
             @RequestParam(value = "file") MultipartFile file,
-            @ModelAttribute ItemRequestDTO requestDTO) {
-        log.info("Creating new item with image: {}", requestDTO.getItemName());
-        ItemDTO createdItem = itemService.createItemWithImage(file, requestDTO);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created(createdItem));
+            @RequestParam("requestDTO") String requestDTOJson) {
+        try {
+            // Parse JSON string to ItemRequestDTO
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+            ItemRequestDTO requestDTO = objectMapper.readValue(requestDTOJson, ItemRequestDTO.class);
+            
+            log.info("Creating new item with image: {}", requestDTO.getItemName());
+            ItemDTO createdItem = itemService.createItemWithImage(file, requestDTO);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.created(createdItem));
+        } catch (Exception e) {
+            log.error("Error creating item with image: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(500, "Failed to create item: " + e.getMessage()));
+        }
     }
     
     @GetMapping("/get-all-items")
@@ -167,6 +180,17 @@ public class ItemController {
         log.info("Updating image for item ID: {}", itemId);
         itemService.updateItemImage(itemId, file);
         return ResponseEntity.ok(ApiResponse.success("Item image updated successfully", null));
+    }
+    
+    @GetMapping("/view-item-image/{itemId}")
+    @Operation(summary = "View item image URL", description = "Retrieve the S3 image URL for an item")
+    public ResponseEntity<ApiResponse<String>> viewItemImage(@PathVariable Long itemId) {
+        log.info("Fetching image URL for item ID: {}", itemId);
+        String imageUrl = itemService.getItemImageUrl(itemId);
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            return ResponseEntity.ok(ApiResponse.success("No image found for this item", null));
+        }
+        return ResponseEntity.ok(ApiResponse.success("Item image URL retrieved successfully", imageUrl));
     }
     
     @DeleteMapping("/delete-item/{id}")

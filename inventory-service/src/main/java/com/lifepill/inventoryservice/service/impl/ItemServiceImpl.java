@@ -231,11 +231,22 @@ public class ItemServiceImpl implements ItemService {
             item.setItemImage(s3Url);
             itemRepository.save(item);
             
-            log.info("Item image updated successfully with S3 URL");
+            log.info("Item image updated successfully for item ID: {}", itemId);
         } catch (Exception e) {
             log.error("Failed to upload item image to S3", e);
             throw new RuntimeException("Failed to upload item image to S3", e);
         }
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public String getItemImageUrl(Long itemId) {
+        log.info("Fetching image URL for item ID: {}", itemId);
+        
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new ResourceNotFoundException("Item", "id", itemId));
+        
+        return item.getItemImage();
     }
     
     @Override

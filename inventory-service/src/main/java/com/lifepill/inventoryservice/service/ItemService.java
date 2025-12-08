@@ -42,7 +42,9 @@ public interface ItemService {
     
     ItemDTO updateItem(Long itemId, ItemRequestDTO requestDTO);
     
-    void updateItemImage(Long itemId, MultipartFile image);
+    void updateItemImage(Long itemId, MultipartFile file);
+    
+    String getItemImageUrl(Long itemId);
     
     void deleteItem(Long itemId);
     
