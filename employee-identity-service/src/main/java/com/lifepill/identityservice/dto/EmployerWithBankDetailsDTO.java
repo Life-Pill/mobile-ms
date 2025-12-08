@@ -33,7 +33,6 @@ public class EmployerWithBankDetailsDTO {
     private Date dateOfBirth;
     private Role role;
     private Integer pin;
-    private byte[] profileImage;
     private String profileImageUrl;
     private Boolean activeStatus;
     

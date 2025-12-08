@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 public class BranchServiceImpl implements BranchService {
     
     private final BranchRepository branchRepository;
+    private final S3Service s3Service;
     
     @Override
     public BranchDTO createBranch(BranchRequestDTO requestDTO) {
@@ -160,10 +161,17 @@ public class BranchServiceImpl implements BranchService {
                 .orElseThrow(() -> new ResourceNotFoundException("Branch", "id", branchId));
         
         try {
-            branch.setBranchImage(image.getBytes());
-            branch.setBranchImageUrl(image.getOriginalFilename());
+            // Delete old image from S3 if exists
+            if (branch.getBranchImageUrl() != null && !branch.getBranchImageUrl().isEmpty()) {
+                s3Service.deleteFile(branch.getBranchImageUrl());
+            }
+            
+            // Upload new image to S3
+            String s3Url = s3Service.uploadFile(image, "branches");
+            branch.setBranchImageUrl(s3Url);
+            
         } catch (IOException e) {
-            throw new RuntimeException("Failed to process image file", e);
+            throw new RuntimeException("Failed to upload image to S3", e);
         }
         
         Branch updatedBranch = branchRepository.save(branch);
@@ -211,7 +219,6 @@ public class BranchServiceImpl implements BranchService {
                 .branchEmail(branch.getBranchEmail())
                 .branchDescription(branch.getBranchDescription())
                 .branchImage(branch.getBranchImageUrl())
-                .branchImageData(branch.getBranchImage())
                 .branchStatus(branch.isBranchStatus())
                 .branchLocation(branch.getBranchLocation())
                 .branchCreatedOn(branch.getBranchCreatedOn())

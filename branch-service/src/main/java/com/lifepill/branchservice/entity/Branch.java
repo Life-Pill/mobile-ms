@@ -39,11 +39,7 @@ public class Branch {
     @Column(name = "branch_description", length = 500)
     private String branchDescription;
     
-    @Lob
-    @Column(name = "branch_image")
-    private byte[] branchImage;
-    
-    @Column(name = "branch_image_url", length = 500)
+    @Column(name = "branch_image_url", length = 1000)
     private String branchImageUrl;
     
     @Column(name = "branch_status", columnDefinition = "BOOLEAN default true")

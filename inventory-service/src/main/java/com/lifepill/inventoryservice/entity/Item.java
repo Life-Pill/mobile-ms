@@ -87,7 +87,7 @@ public class Item {
     @Column(name = "is_special_condition", columnDefinition = "BOOLEAN default false")
     private boolean isSpecialCondition;
     
-    @Column(name = "item_image", length = 500)
+    @Column(name = "item_image", length = 1000)
     private String itemImage;
     
     @Column(name = "item_description", length = 500)

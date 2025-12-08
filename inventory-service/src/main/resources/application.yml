@@ -36,8 +36,21 @@ spring:
   servlet:
     multipart:
       enabled: true
-      max-file-size: 10MB
-      max-request-size: 10MB
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+# AWS S3 Configuration
+aws:
+  access:
+    key:
+      id: ${AWS_ACCESS_KEY_ID:}
+  secret:
+    access:
+      key: ${AWS_SECRET_ACCESS_KEY:}
+  s3:
+    bucket: ${AWS_S3_BUCKET:lifepill-images}
+    endpoint: ${AWS_S3_ENDPOINT:https://s3.amazonaws.com}
+  region: ${AWS_REGION:us-east-1}
 
 # Eureka Client Configuration
 eureka:

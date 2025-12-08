@@ -26,8 +26,6 @@ public class EmployerDTO {
     
     private String employerLastName;
     
-    private byte[] profileImage;
-    
     private String profileImageUrl;
     
     private String employerEmail;

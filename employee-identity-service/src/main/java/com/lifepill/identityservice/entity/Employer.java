@@ -41,10 +41,7 @@ public class Employer implements UserDetails {
     private String employerLastName;
 
     @Lob
-    @Column(name = "profile_image", nullable = true)
-    private byte[] profileImage;
-
-    @Column(name = "profile_image_url", nullable = true)
+    @Column(name = "profile_image_url", nullable = true, length = 1000)
     private String profileImageUrl;
 
     @Column(name = "employer_password", nullable = false)

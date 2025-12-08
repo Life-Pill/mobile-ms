@@ -35,6 +35,7 @@ public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final ItemCategoryRepository categoryRepository;
     private final SupplierRepository supplierRepository;
+    private final S3Service s3Service;
     
     @Override
     public ItemDTO createItem(ItemRequestDTO requestDTO) {
@@ -218,9 +219,22 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Item", "id", itemId));
         
-        // For now, store filename. In production, upload to S3/cloud storage
-        item.setItemImage(image.getOriginalFilename());
-        itemRepository.save(item);
+        try {
+            // Delete old image from S3 if exists
+            if (item.getItemImage() != null && !item.getItemImage().isEmpty()) {
+                s3Service.deleteFile(item.getItemImage());
+            }
+            
+            // Upload new image to S3
+            String s3Url = s3Service.uploadFile(image, "items");
+            item.setItemImage(s3Url);
+            itemRepository.save(item);
+            
+            log.info("Item image updated successfully with S3 URL");
+        } catch (Exception e) {
+            log.error("Failed to upload item image to S3", e);
+            throw new RuntimeException("Failed to upload item image to S3", e);
+        }
     }
     
     @Override

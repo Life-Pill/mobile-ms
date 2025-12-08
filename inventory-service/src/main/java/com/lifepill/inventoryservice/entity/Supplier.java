@@ -41,7 +41,7 @@ public class Supplier {
     @Column(name = "supplier_description", length = 500)
     private String supplierDescription;
     
-    @Column(name = "supplier_image", length = 500)
+    @Column(name = "supplier_image", length = 1000)
     private String supplierImage;
     
     @Column(name = "supplier_rating", length = 20)

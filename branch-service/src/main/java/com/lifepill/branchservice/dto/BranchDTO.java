@@ -22,7 +22,6 @@ public class BranchDTO {
     private String branchEmail;
     private String branchDescription;
     private String branchImage;
-    private byte[] branchImageData;
     private boolean branchStatus;
     private String branchLocation;
     private String branchCreatedOn;

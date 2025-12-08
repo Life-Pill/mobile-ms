@@ -50,7 +50,7 @@ public class SupplierCompany {
     @Column(name = "company_account_number", length = 50)
     private String companyAccountNumber;
     
-    @Column(name = "company_image", length = 500)
+    @Column(name = "company_image", length = 1000)
     private String companyImage;
     
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "supplierCompany", fetch = FetchType.LAZY)

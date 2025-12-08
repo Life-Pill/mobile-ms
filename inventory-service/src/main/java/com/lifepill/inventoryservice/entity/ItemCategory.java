@@ -29,7 +29,7 @@ public class ItemCategory {
     @Column(name = "category_description", length = 255)
     private String categoryDescription;
     
-    @Column(name = "category_image", length = 500)
+    @Column(name = "category_image", length = 1000)
     private String categoryImage;
     
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "itemCategory", fetch = FetchType.LAZY)

@@ -49,7 +49,18 @@ spring:
 app:
   password-reset-url: ${PASSWORD_RESET_URL:http://localhost:9191/reset-password}
 
-
+# AWS S3 Configuration
+aws:
+  access:
+    key:
+      id: ${AWS_ACCESS_KEY_ID:}
+  secret:
+    access:
+      key: ${AWS_SECRET_ACCESS_KEY:}
+  s3:
+    bucket: ${AWS_S3_BUCKET:lifepill-images}
+    endpoint: ${AWS_S3_ENDPOINT:https://s3.amazonaws.com}
+  region: ${AWS_REGION:us-east-1}
 
 server:
   port: ${PORT:8085}

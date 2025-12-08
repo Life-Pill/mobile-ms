@@ -40,11 +40,14 @@ jwt:
 # AWS S3 Configuration
 aws:
   access:
-    key: ${AWS_ACCESS_KEY:}
+    key:
+      id: ${AWS_ACCESS_KEY_ID:}
   secret:
-    key: ${AWS_SECRET_KEY:}
+    access:
+      key: ${AWS_SECRET_ACCESS_KEY:}
   s3:
-    bucket: ${AWS_S3_BUCKET:}
+    bucket: ${AWS_S3_BUCKET:lifepill-images}
+    endpoint: ${AWS_S3_ENDPOINT:https://s3.amazonaws.com}
   region: ${AWS_REGION:us-east-1}
 
 # Eureka Client Configuration

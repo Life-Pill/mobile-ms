@@ -110,7 +110,63 @@ public class BranchController {
         return ResponseEntity.ok(ApiResponse.success("Branch image updated successfully", updatedBranch));
     }
     
-    @GetMapping("/search-by-name")
+    @PutMapping(value = "/update-branch-profile-image/{branchId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Update branch profile image", description = "Upload and update branch profile image (alias for update-image)")
+    public ResponseEntity<ApiResponse<BranchDTO>> updateBranchProfileImage(
+            @PathVariable Long branchId,
+            @RequestParam("image") MultipartFile image) {
+        log.info("Updating profile image for branch ID: {}", branchId);
+        BranchDTO updatedBranch = branchService.updateBranchImage(branchId, image);
+        return ResponseEntity.ok(ApiResponse.success("Branch profile image updated successfully", updatedBranch));
+    }
+    
+    @GetMapping("/view-image/{branchId}")
+    @Operation(summary = "View branch image", description = "Get branch image URL")
+    public ResponseEntity<ApiResponse<String>> viewBranchImage(@PathVariable Long branchId) {
+        log.info("Fetching image URL for branch ID: {}", branchId);
+        BranchDTO branch = branchService.getBranchById(branchId);
+        String imageUrl = branch.getBranchImage();
+        
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            return ResponseEntity.ok(ApiResponse.success("No image found for this branch", null));
+        }
+        
+        return ResponseEntity.ok(ApiResponse.success("Branch image URL retrieved successfully", imageUrl));
+    }
+    
+    @GetMapping("/view-branch-profile-image/{branchId}")
+    @Operation(summary = "View branch profile image", description = "Get branch profile image URL (alias for view-image)")
+    public ResponseEntity<ApiResponse<String>> viewBranchProfileImage(@PathVariable Long branchId) {
+        log.info("Fetching profile image URL for branch ID: {}", branchId);
+        BranchDTO branch = branchService.getBranchById(branchId);
+        String imageUrl = branch.getBranchImage();
+        
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            return ResponseEntity.ok(ApiResponse.success("No profile image found for this branch", null));
+        }
+        
+        return ResponseEntity.ok(ApiResponse.success("Branch profile image URL retrieved successfully", imageUrl));
+    }
+    
+    @PostMapping(value = "/save-branch", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    @Operation(summary = "Create a new branch with optional image", description = "Create a new pharmacy branch with optional image upload")
+    public ResponseEntity<ApiResponse<BranchDTO>> saveBranch(
+            @RequestPart("branch") BranchRequestDTO requestDTO,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+        log.info("Creating new branch: {}", requestDTO.getBranchName());
+        BranchDTO createdBranch = branchService.createBranch(requestDTO);
+        
+        // Upload image if provided
+        if (image != null && !image.isEmpty()) {
+            log.info("Uploading image for new branch ID: {}", createdBranch.getBranchId());
+            createdBranch = branchService.updateBranchImage(createdBranch.getBranchId(), image);
+        }
+        
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created(createdBranch));
+    }
+
+@GetMapping("/search-by-name")
     @Operation(summary = "Search branches by name", description = "Search branches by branch name")
     public ResponseEntity<ApiResponse<List<BranchDTO>>> searchBranchesByName(@RequestParam String name) {
         log.info("Searching branches by name: {}", name);
@@ -150,10 +206,7 @@ public class BranchController {
         return ResponseEntity.ok(ApiResponse.success(count));
     }
     
-    // ============================================
-    // BRANCH SUMMARY OPERATIONS (Sales & Analytics)
-    // ============================================
-    
+
     @GetMapping("/summary/all")
     @Operation(
         summary = "Get all pharmacy branch summaries",
