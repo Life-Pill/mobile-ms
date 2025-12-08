@@ -199,7 +199,7 @@ public class EmployerController {
     }
 
     @PostMapping("/create")
-    @PreAuthorize("hasRole('OWNER')")
+    @PreAuthorize("hasRole('OWNER', 'MANAGER')")
     @Operation(summary = "Create new employer")
     public ResponseEntity<StandardResponse> createEmployer(
             @RequestParam Long branchId,
@@ -317,8 +317,6 @@ public class EmployerController {
         return ResponseEntity.ok(new StandardResponse(200, message, null));
     }
 
-    // ========== Image Endpoints ==========
-
     @PutMapping(value = "/update-employer-image/{employerId}", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'CASHIER')")
     @Operation(summary = "Update employer profile image", description = "Upload a new profile image for an employer. Old image will be deleted from S3.")
@@ -336,17 +334,28 @@ public class EmployerController {
     }
 
     @PostMapping(value = "/save-with-image", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('OWNER')")
-    @Operation(summary = "Create employer with image", description = "Create a new employer with profile image uploaded to S3")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+    @Operation(summary = "Create employer with image", description = "Create a new employer with profile image uploaded to S3 using form data")
     public ResponseEntity<StandardResponse> saveEmployerWithImage(
             @RequestParam Long branchId,
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
-            @RequestParam("requestDTO") String requestDTOJson) {
+            @RequestParam("employerFirstName") String employerFirstName,
+            @RequestParam("employerLastName") String employerLastName,
+            @RequestParam("employerEmail") String employerEmail,
+            @RequestParam("employerPassword") String employerPassword,
+            @RequestParam("role") String role,
+            @RequestParam("pin") Integer pin) {
         log.info("Create employer with image for branch: {}", branchId);
         try {
-            com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-            CreateEmployerRequestDTO requestDTO = objectMapper.readValue(requestDTOJson, CreateEmployerRequestDTO.class);
+            // Build CreateEmployerRequestDTO from form fields
+            CreateEmployerRequestDTO requestDTO = CreateEmployerRequestDTO.builder()
+                    .employerFirstName(employerFirstName)
+                    .employerLastName(employerLastName)
+                    .employerEmail(employerEmail)
+                    .employerPassword(employerPassword)
+                    .role(role)
+                    .pin(pin)
+                    .build();
             
             EmployerDTO createdEmployer = employerService.createEmployerWithImage(branchId, requestDTO, file);
             return ResponseEntity.status(201).body(new StandardResponse(200, "Employer created successfully with image", createdEmployer));
@@ -357,13 +366,19 @@ public class EmployerController {
     }
 
     @PostMapping(value = "/save-employer-with-image", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('OWNER')")
-    @Operation(summary = "Create employer with image (alias)", description = "Alias endpoint for creating employer with profile image")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
+    @Operation(summary = "Create employer with image (form data)", description = "Create employer with profile image using individual form fields")
     public ResponseEntity<StandardResponse> saveEmployerWithImageAlias(
             @RequestParam Long branchId,
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
-            @RequestParam("requestDTO") String requestDTOJson) {
-        return saveEmployerWithImage(branchId, file, requestDTOJson);
+            @RequestParam("employerFirstName") String employerFirstName,
+            @RequestParam("employerLastName") String employerLastName,
+            @RequestParam("employerEmail") String employerEmail,
+            @RequestParam("employerPassword") String employerPassword,
+            @RequestParam("role") String role,
+            @RequestParam("pin") Integer pin) {
+        return saveEmployerWithImage(branchId, file, employerFirstName, employerLastName, 
+                employerEmail, employerPassword, role, pin);
     }
 
     @GetMapping("/view-profile-image/{employerId}")

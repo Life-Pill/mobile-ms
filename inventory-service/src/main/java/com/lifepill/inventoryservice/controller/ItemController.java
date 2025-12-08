@@ -41,15 +41,62 @@ public class ItemController {
     }
     
     @PostMapping(value = "/save-item-with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "Create item with image", description = "Create a new item with an image")
+    @Operation(summary = "Create item with image", description = "Create a new item with an image using form data")
     public ResponseEntity<ApiResponse<ItemDTO>> saveItemWithImage(
             @RequestParam(value = "file") MultipartFile file,
-            @RequestParam("requestDTO") String requestDTOJson) {
+            @RequestParam("itemName") String itemName,
+            @RequestParam("sellingPrice") Double sellingPrice,
+            @RequestParam(value = "itemBarCode", required = false) String itemBarCode,
+            @RequestParam(value = "supplyDate", required = false) String supplyDate,
+            @RequestParam(value = "supplierPrice", required = false) Double supplierPrice,
+            @RequestParam(value = "isFreeIssued", required = false, defaultValue = "false") boolean isFreeIssued,
+            @RequestParam(value = "isDiscounted", required = false, defaultValue = "false") boolean isDiscounted,
+            @RequestParam(value = "itemManufacture", required = false) String itemManufacture,
+            @RequestParam(value = "itemQuantity", required = false, defaultValue = "0") Double itemQuantity,
+            @RequestParam(value = "stock", required = false, defaultValue = "true") boolean stock,
+            @RequestParam(value = "measuringUnitType", required = false) String measuringUnitType,
+            @RequestParam(value = "manufactureDate", required = false) String manufactureDate,
+            @RequestParam(value = "expireDate", required = false) String expireDate,
+            @RequestParam(value = "purchaseDate", required = false) String purchaseDate,
+            @RequestParam(value = "warrantyPeriod", required = false) String warrantyPeriod,
+            @RequestParam(value = "rackNumber", required = false) String rackNumber,
+            @RequestParam(value = "discountedPrice", required = false) Double discountedPrice,
+            @RequestParam(value = "discountedPercentage", required = false) Double discountedPercentage,
+            @RequestParam(value = "warehouseName", required = false) String warehouseName,
+            @RequestParam(value = "isSpecialCondition", required = false, defaultValue = "false") boolean isSpecialCondition,
+            @RequestParam(value = "itemDescription", required = false) String itemDescription,
+            @RequestParam(value = "branchId", required = false) Long branchId,
+            @RequestParam(value = "categoryId", required = false) Long categoryId,
+            @RequestParam(value = "supplierId", required = false) Long supplierId) {
         try {
-            // Parse JSON string to ItemRequestDTO
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.registerModule(new JavaTimeModule());
-            ItemRequestDTO requestDTO = objectMapper.readValue(requestDTOJson, ItemRequestDTO.class);
+            // Build ItemRequestDTO from form fields
+            ItemRequestDTO requestDTO = ItemRequestDTO.builder()
+                    .itemName(itemName)
+                    .sellingPrice(sellingPrice)
+                    .itemBarCode(itemBarCode)
+                    .supplyDate(supplyDate != null && !supplyDate.isEmpty() ? java.time.LocalDate.parse(supplyDate) : null)
+                    .supplierPrice(supplierPrice)
+                    .isFreeIssued(isFreeIssued)
+                    .isDiscounted(isDiscounted)
+                    .itemManufacture(itemManufacture)
+                    .itemQuantity(itemQuantity)
+                    .stock(stock)
+                    .measuringUnitType(measuringUnitType != null && !measuringUnitType.isEmpty() ? 
+                            com.lifepill.inventoryservice.entity.enums.MeasuringUnitType.valueOf(measuringUnitType) : null)
+                    .manufactureDate(manufactureDate != null && !manufactureDate.isEmpty() ? java.time.LocalDate.parse(manufactureDate) : null)
+                    .expireDate(expireDate != null && !expireDate.isEmpty() ? java.time.LocalDate.parse(expireDate) : null)
+                    .purchaseDate(purchaseDate != null && !purchaseDate.isEmpty() ? java.time.LocalDate.parse(purchaseDate) : null)
+                    .warrantyPeriod(warrantyPeriod)
+                    .rackNumber(rackNumber)
+                    .discountedPrice(discountedPrice)
+                    .discountedPercentage(discountedPercentage)
+                    .warehouseName(warehouseName)
+                    .isSpecialCondition(isSpecialCondition)
+                    .itemDescription(itemDescription)
+                    .branchId(branchId)
+                    .categoryId(categoryId)
+                    .supplierId(supplierId)
+                    .build();
             
             log.info("Creating new item with image: {}", requestDTO.getItemName());
             ItemDTO createdItem = itemService.createItemWithImage(file, requestDTO);
