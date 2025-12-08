@@ -14,6 +14,7 @@ import com.lifepill.identityservice.exception.NotFoundException;
 import com.lifepill.identityservice.repository.EmployerBankDetailsRepository;
 import com.lifepill.identityservice.repository.EmployerRepository;
 import com.lifepill.identityservice.service.EmployerService;
+import com.lifepill.identityservice.service.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -37,6 +38,7 @@ public class EmployerServiceImpl implements EmployerService {
     private final EmployerBankDetailsRepository employerBankDetailsRepository;
     private final BranchServiceClient branchServiceClient;
     private final ModelMapper modelMapper;
+    private final S3Service s3Service;
 
     @Override
     @Transactional(readOnly = true)
@@ -380,5 +382,65 @@ public class EmployerServiceImpl implements EmployerService {
         }
         
         return dto;
+    }
+
+    @Override
+    public EmployerDTO updateEmployerImage(Long employerId, org.springframework.web.multipart.MultipartFile image) {
+        log.info("Updating profile image for employer ID: {}", employerId);
+        
+        Employer employer = employerRepository.findById(employerId)
+                .orElseThrow(() -> new NotFoundException("Employer not found with ID: " + employerId));
+        
+        try {
+            // Delete old image from S3 if exists
+            if (employer.getProfileImageUrl() != null && !employer.getProfileImageUrl().isEmpty()) {
+                s3Service.deleteFile(employer.getProfileImageUrl());
+                log.info("Deleted old profile image for employer ID: {}", employerId);
+            }
+            
+            // Upload new image to S3
+            String s3Url = s3Service.uploadFile(image, "employers");
+            employer.setProfileImageUrl(s3Url);
+            Employer savedEmployer = employerRepository.save(employer);
+            
+            log.info("Profile image updated successfully for employer ID: {}", employerId);
+            return mapToDTO(savedEmployer);
+        } catch (Exception e) {
+            log.error("Failed to upload profile image to S3 for employer ID: {}", employerId, e);
+            throw new RuntimeException("Failed to upload profile image: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String getEmployerImageUrl(Long employerId) {
+        log.info("Getting profile image URL for employer ID: {}", employerId);
+        
+        Employer employer = employerRepository.findById(employerId)
+                .orElseThrow(() -> new NotFoundException("Employer not found with ID: " + employerId));
+        
+        String imageUrl = employer.getProfileImageUrl();
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            throw new NotFoundException("No profile image found for employer ID: " + employerId);
+        }
+        
+        return imageUrl;
+    }
+
+    @Override
+    public EmployerDTO createEmployerWithImage(Long branchId, 
+            com.lifepill.identityservice.dto.request.CreateEmployerRequestDTO requestDTO,
+            org.springframework.web.multipart.MultipartFile image) {
+        log.info("Creating employer with image for branch: {}", branchId);
+        
+        // First create the employer without image
+        EmployerDTO createdEmployer = createEmployer(branchId, requestDTO);
+        
+        // Then upload the image if provided
+        if (image != null && !image.isEmpty()) {
+            return updateEmployerImage(createdEmployer.getEmployerId(), image);
+        }
+        
+        return createdEmployer;
     }
 }

@@ -209,8 +209,6 @@ public class EmployerController {
         return ResponseEntity.status(201).body(new StandardResponse(200, "Employer created successfully", employer));
     }
 
-    // ========== Bank Details Management Endpoints ==========
-
     @GetMapping("/get-all-employers-bank-details")
     @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
     @Operation(summary = "Get all employer bank details", description = "Retrieves bank details for all employers")
@@ -277,8 +275,6 @@ public class EmployerController {
         return ResponseEntity.ok(new StandardResponse(200, "Account details updated successfully", updatedEmployer));
     }
 
-    // ========== Password Management Endpoints ==========
-
     @PutMapping("/updateRecentPin")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Update employer PIN", description = "Updates PIN with role hierarchy validation")
@@ -319,5 +315,80 @@ public class EmployerController {
         log.info("Reset password request with token");
         String message = passwordService.resetPassword(dto);
         return ResponseEntity.ok(new StandardResponse(200, message, null));
+    }
+
+    // ========== Image Endpoints ==========
+
+    @PutMapping(value = "/update-employer-image/{employerId}", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'CASHIER')")
+    @Operation(summary = "Update employer profile image", description = "Upload a new profile image for an employer. Old image will be deleted from S3.")
+    public ResponseEntity<StandardResponse> updateEmployerImage(
+            @PathVariable Long employerId,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        log.info("Update profile image for employer ID: {}", employerId);
+        try {
+            EmployerDTO updatedEmployer = employerService.updateEmployerImage(employerId, file);
+            return ResponseEntity.ok(new StandardResponse(200, "Profile image updated successfully", updatedEmployer));
+        } catch (Exception e) {
+            log.error("Failed to update profile image for employer ID: {}", employerId, e);
+            return ResponseEntity.status(500).body(new StandardResponse(500, "Failed to update image: " + e.getMessage(), null));
+        }
+    }
+
+    @PostMapping(value = "/save-with-image", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('OWNER')")
+    @Operation(summary = "Create employer with image", description = "Create a new employer with profile image uploaded to S3")
+    public ResponseEntity<StandardResponse> saveEmployerWithImage(
+            @RequestParam Long branchId,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam("requestDTO") String requestDTOJson) {
+        log.info("Create employer with image for branch: {}", branchId);
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+            com.lifepill.identityservice.dto.request.CreateEmployerRequestDTO requestDTO = 
+                    objectMapper.readValue(requestDTOJson, com.lifepill.identityservice.dto.request.CreateEmployerRequestDTO.class);
+            
+            EmployerDTO createdEmployer = employerService.createEmployerWithImage(branchId, requestDTO, file);
+            return ResponseEntity.status(201).body(new StandardResponse(200, "Employer created successfully with image", createdEmployer));
+        } catch (Exception e) {
+            log.error("Failed to create employer with image for branch: {}", branchId, e);
+            return ResponseEntity.status(500).body(new StandardResponse(500, "Failed to create employer: " + e.getMessage(), null));
+        }
+    }
+
+    @PostMapping(value = "/save-employer-with-image", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('OWNER')")
+    @Operation(summary = "Create employer with image (alias)", description = "Alias endpoint for creating employer with profile image")
+    public ResponseEntity<StandardResponse> saveEmployerWithImageAlias(
+            @RequestParam Long branchId,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam("requestDTO") String requestDTOJson) {
+        return saveEmployerWithImage(branchId, file, requestDTOJson);
+    }
+
+    @GetMapping("/view-profile-image/{employerId}")
+    @Operation(summary = "View employer profile image", description = "Get the S3 URL of employer's profile image")
+    public ResponseEntity<StandardResponse> viewProfileImage(@PathVariable Long employerId) {
+        log.info("View profile image for employer ID: {}", employerId);
+        try {
+            String imageUrl = employerService.getEmployerImageUrl(employerId);
+            return ResponseEntity.ok(new StandardResponse(200, "Profile image URL retrieved", imageUrl));
+        } catch (Exception e) {
+            log.error("Failed to get profile image for employer ID: {}", employerId, e);
+            return ResponseEntity.status(404).body(new StandardResponse(404, e.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/view-image/{employerId}")
+    @Operation(summary = "View employer image (alias)", description = "Alias endpoint for getting employer's profile image URL")
+    public ResponseEntity<StandardResponse> viewImage(@PathVariable Long employerId) {
+        return viewProfileImage(employerId);
+    }
+
+    @GetMapping("/profile-photo/{employerId}")
+    @Operation(summary = "Get employer profile photo (alias)", description = "Alias endpoint for getting employer's profile image URL")
+    public ResponseEntity<StandardResponse> getProfilePhoto(@PathVariable Long employerId) {
+        return viewProfileImage(employerId);
     }
 }

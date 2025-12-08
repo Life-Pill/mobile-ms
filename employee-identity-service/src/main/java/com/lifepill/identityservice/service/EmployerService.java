@@ -185,5 +185,32 @@ public interface EmployerService {
      * @return Updated employer DTO
      */
     EmployerDTO updateEmployerAccountDetails(UpdateEmployerAccountDTO dto);
+
+    /**
+     * Updates employer profile image.
+     *
+     * @param employerId The employer ID
+     * @param image The image file to upload
+     * @return Updated employer DTO with new image URL
+     */
+    EmployerDTO updateEmployerImage(Long employerId, org.springframework.web.multipart.MultipartFile image);
+
+    /**
+     * Gets employer profile image URL.
+     *
+     * @param employerId The employer ID
+     * @return The profile image URL
+     */
+    String getEmployerImageUrl(Long employerId);
+
+    /**
+     * Creates a new employer with profile image.
+     *
+     * @param branchId The branch ID
+     * @param requestDTO The employer creation data
+     * @param image The profile image file
+     * @return The created employer DTO
+     */
+    EmployerDTO createEmployerWithImage(Long branchId, CreateEmployerRequestDTO requestDTO, org.springframework.web.multipart.MultipartFile image);
 }
 

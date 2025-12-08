@@ -34,7 +34,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Branch Management", description = "APIs for managing pharmacy branches including CRUD operations and sales summaries")
-@CrossOrigin(origins = "*")
 public class BranchController {
     
     private final BranchService branchService;

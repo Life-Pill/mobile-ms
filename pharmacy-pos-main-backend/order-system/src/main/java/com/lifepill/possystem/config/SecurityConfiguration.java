@@ -19,14 +19,10 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 /**
  * Configuration class for Spring Security.
  *
- * <p>CORS is enabled using Spring Security's built-in support with
- * {@code Customizer.withDefaults()}, which automatically picks up the
- * {@link org.springframework.web.cors.CorsConfigurationSource} bean
- * from {@link CorsConfig}.</p>
+ * <p>NOTE: CORS is handled by API Gateway only - no CORS config here.</p>
  *
  * @author LifePill Development Team
  * @version 1.0
- * @see CorsConfig
  */
 @Configuration
 @EnableWebSecurity
@@ -56,7 +52,8 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(Customizer.withDefaults()) // Uses CorsConfigurationSource from CorsConfig
+                // CORS is handled by API Gateway - disabled here to prevent duplicate headers
+                .cors(cors -> cors.disable())
                 .authorizeHttpRequests(req ->
                         req.requestMatchers("/lifepill/v1/auth/**",
                                         "/lifepill/v1/session/**",

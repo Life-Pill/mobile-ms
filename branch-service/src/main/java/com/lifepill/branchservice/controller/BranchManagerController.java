@@ -23,7 +23,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Branch Manager", description = "APIs for managing branch managers and employers")
-@CrossOrigin(origins = "*")
 public class BranchManagerController {
 
     private final BranchManagerService branchManagerService;

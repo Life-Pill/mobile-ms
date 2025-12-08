@@ -40,7 +40,6 @@ import java.util.List;
 @RequestMapping("/lifepill/v1/branch-summary")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 @Tag(name = "Branch Summary API (Deprecated)", description = "DEPRECATED - Use /lifepill/v1/branch/summary/* endpoints instead")
 public class BranchSummaryController {
 
