@@ -30,7 +30,17 @@ public class JwtService {
     @SuppressWarnings("unchecked")
     public List<String> extractRoles(String token) {
         Claims claims = extractAllClaims(token);
-        return claims.get("roles", List.class);
+        
+        // Check if this is a user-auth token (has "type" claim with "access" value)
+        String tokenType = claims.get("type", String.class);
+        if ("access".equals(tokenType)) {
+            // This is a mobile user token from user-auth - assign USER role
+            return List.of("ROLE_USER");
+        }
+        
+        // Otherwise, extract roles from employee token
+        List<String> roles = claims.get("roles", List.class);
+        return roles != null ? roles : List.of();
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {

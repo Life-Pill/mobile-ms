@@ -304,6 +304,13 @@ services:
       # Flyway Migration
       - FLYWAY_ENABLED=${FLYWAY_ENABLED:-true}
       - JPA_DDL_AUTO=update
+      # JWT Configuration (Same as user-auth for token validation)
+      - JWT_SECRET=${JWT_SECRET}
+      # AWS S3 Configuration
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET:-image-bucket-storage-new}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
     volumes:
       - ./logs/patient-customer-service:/logs
     networks:
