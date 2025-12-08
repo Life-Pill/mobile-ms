@@ -6,6 +6,7 @@ import com.lifepill.identityservice.dto.request.UpdatePasswordDTO;
 import com.lifepill.identityservice.dto.request.UpdatePinDTO;
 import com.lifepill.identityservice.entity.Employer;
 import com.lifepill.identityservice.entity.PasswordResetToken;
+import com.lifepill.identityservice.exception.BadRequestException;
 import com.lifepill.identityservice.exception.NotFoundException;
 import com.lifepill.identityservice.repository.EmployerRepository;
 import com.lifepill.identityservice.repository.PasswordResetTokenRepository;
@@ -151,15 +152,15 @@ public class PasswordServiceImpl implements PasswordService {
         
         // Find token
         PasswordResetToken resetToken = tokenRepository.findByToken(dto.getToken())
-                .orElseThrow(() -> new RuntimeException("Invalid or expired reset token"));
+                .orElseThrow(() -> new NotFoundException("Invalid or expired reset token"));
         
         // Validate token
         if (resetToken.getUsed()) {
-            throw new RuntimeException("This reset link has already been used");
+            throw new BadRequestException("This reset link has already been used");
         }
         
         if (resetToken.isExpired()) {
-            throw new RuntimeException("This reset link has expired. Please request a new one");
+            throw new BadRequestException("This reset link has expired. Please request a new one");
         }
         
         // Get employer

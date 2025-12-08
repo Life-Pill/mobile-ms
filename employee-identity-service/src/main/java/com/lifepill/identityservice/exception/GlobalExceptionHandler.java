@@ -48,6 +48,13 @@ public class GlobalExceptionHandler {
                 .body(new StandardResponse(403, "Access denied", null));
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<StandardResponse> handleBadRequestException(BadRequestException ex) {
+        log.error("Bad request: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new StandardResponse(400, ex.getMessage(), null));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<StandardResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
