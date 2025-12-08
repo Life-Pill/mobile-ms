@@ -1,5 +1,7 @@
 package com.lifepill.possystem.service.impl;
 
+import com.lifepill.possystem.dto.requestDTO.RequestOrderDetailsSaveDTO;
+import com.lifepill.possystem.dto.requestDTO.RequestOrderSaveDTO;
 import com.lifepill.possystem.entity.Order;
 import com.lifepill.possystem.entity.OrderDetails;
 import com.lifepill.possystem.entity.PaymentDetails;
@@ -27,14 +29,14 @@ public class EmailServiceImpl implements EmailService {
     private final JavaMailSender mailSender;
 
     @Override
-    public void sendOrderConfirmationEmail(String recipientEmail, String customerName, Order order) {
+    public void sendOrderConfirmationEmail(String recipientEmail, String customerName, Order order, RequestOrderSaveDTO orderDTO) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setTo(recipientEmail);
             helper.setSubject("Order Confirmation - Order #" + order.getOrderId());
-            helper.setText(buildOrderConfirmationEmail(customerName, order), true);
+            helper.setText(buildOrderConfirmationEmail(customerName, order, orderDTO), true);
 
             mailSender.send(message);
             log.info("Order confirmation email sent to: {}", recipientEmail);
@@ -44,7 +46,7 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
-    private String buildOrderConfirmationEmail(String customerName, Order order) {
+    private String buildOrderConfirmationEmail(String customerName, Order order, RequestOrderSaveDTO orderDTO) {
         NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("en", "LK"));
         SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy HH:mm");
 

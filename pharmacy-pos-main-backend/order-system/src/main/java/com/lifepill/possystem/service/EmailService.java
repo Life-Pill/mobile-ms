@@ -1,5 +1,6 @@
 package com.lifepill.possystem.service;
 
+import com.lifepill.possystem.dto.requestDTO.RequestOrderSaveDTO;
 import com.lifepill.possystem.entity.Order;
 
 /**
@@ -12,7 +13,8 @@ public interface EmailService {
      *
      * @param recipientEmail The email address of the recipient
      * @param customerName   The name of the customer
-     * @param order          The order details to include in the email
+     * @param order          The order entity with generated ID and dates
+     * @param orderDTO       The order DTO with complete details (items, payment, etc.)
      */
-    void sendOrderConfirmationEmail(String recipientEmail, String customerName, Order order);
+    void sendOrderConfirmationEmail(String recipientEmail, String customerName, Order order, RequestOrderSaveDTO orderDTO);
 }
