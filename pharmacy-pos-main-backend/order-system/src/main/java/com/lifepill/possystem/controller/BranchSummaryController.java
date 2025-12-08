@@ -20,7 +20,6 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/lifepill/v1/order/branch-summary")
-@CrossOrigin(origins = "http://localhost:5173")
 @AllArgsConstructor
 public class BranchSummaryController {
 

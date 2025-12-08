@@ -27,7 +27,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Item Management", description = "APIs for managing inventory items/medicines")
-@CrossOrigin(origins = "*")
 public class ItemController {
     
     private final ItemService itemService;

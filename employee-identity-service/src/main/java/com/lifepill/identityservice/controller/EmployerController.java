@@ -346,8 +346,7 @@ public class EmployerController {
         try {
             com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
             objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-            com.lifepill.identityservice.dto.request.CreateEmployerRequestDTO requestDTO = 
-                    objectMapper.readValue(requestDTOJson, com.lifepill.identityservice.dto.request.CreateEmployerRequestDTO.class);
+            CreateEmployerRequestDTO requestDTO = objectMapper.readValue(requestDTOJson, CreateEmployerRequestDTO.class);
             
             EmployerDTO createdEmployer = employerService.createEmployerWithImage(branchId, requestDTO, file);
             return ResponseEntity.status(201).body(new StandardResponse(200, "Employer created successfully with image", createdEmployer));

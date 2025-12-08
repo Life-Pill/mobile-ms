@@ -21,7 +21,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Category Management", description = "APIs for managing item categories")
-@CrossOrigin(origins = "*")
 public class ItemCategoryController {
     
     private final ItemCategoryService categoryService;

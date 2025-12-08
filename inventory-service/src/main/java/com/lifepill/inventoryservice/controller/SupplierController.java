@@ -22,7 +22,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Supplier Management", description = "APIs for managing suppliers")
-@CrossOrigin(origins = "*")
 public class SupplierController {
     
     private final SupplierService supplierService;
