@@ -48,7 +48,7 @@ aws:
     access:
       key: ${AWS_SECRET_ACCESS_KEY:}
   s3:
-    bucket: ${AWS_S3_BUCKET:lifepill-images}
+    bucket: ${AWS_S3_BUCKET:image-bucket-storage-new}
     endpoint: ${AWS_S3_ENDPOINT:https://s3.amazonaws.com}
   region: ${AWS_REGION:us-east-1}
 
@@ -109,11 +109,3 @@ cors:
   allowed-headers: ${CORS_HEADERS:*}
   allow-credentials: ${CORS_ALLOW_CREDENTIALS:false}
   max-age: ${CORS_MAX_AGE:86400}
-
-# AWS S3 Configuration (for item images)
-aws:
-  s3:
-    bucket-name: ${AWS_S3_BUCKET:lifepill-inventory-images}
-    region: ${AWS_REGION:us-east-1}
-    access-key: ${AWS_ACCESS_KEY:}
-    secret-key: ${AWS_SECRET_KEY:}
