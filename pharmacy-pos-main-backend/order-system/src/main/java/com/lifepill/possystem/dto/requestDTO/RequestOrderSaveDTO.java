@@ -24,5 +24,9 @@ public class RequestOrderSaveDTO {
     private Double total; // TODO Change total to orderTotal
     private List<RequestOrderDetailsSaveDTO> orderDetails;
     private RequestPaymentDetailsDTO paymentDetails;
+    
+    // Optional fields for email notification
+    private String customerEmail;
+    private String customerName;
 
 }

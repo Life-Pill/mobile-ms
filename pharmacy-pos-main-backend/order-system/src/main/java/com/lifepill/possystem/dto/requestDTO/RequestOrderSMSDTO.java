@@ -20,4 +20,5 @@ public class RequestOrderSMSDTO {
     private Double total; // TODO Change total to orderTotal
     private List<RequestOrderDetailsSaveDTO> orderDetails;
     private RequestPaymentDetailsDTO paymentDetails;
+    private String customerName;  // Added for email notifications
 }

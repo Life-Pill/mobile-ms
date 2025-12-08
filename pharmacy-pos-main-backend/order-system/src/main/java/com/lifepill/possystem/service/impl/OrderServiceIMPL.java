@@ -18,6 +18,7 @@ import com.lifepill.possystem.exception.NotFoundException;
 import com.lifepill.possystem.repo.orderRepository.OrderDetailsRepository;
 import com.lifepill.possystem.repo.orderRepository.OrderRepository;
 import com.lifepill.possystem.repo.paymentRepository.PaymentRepository;
+import com.lifepill.possystem.service.EmailService;
 import com.lifepill.possystem.service.OrderService;
 import com.lifepill.possystem.util.mappers.OrderMapper;
 import lombok.AllArgsConstructor;
@@ -52,6 +53,7 @@ public class OrderServiceIMPL implements OrderService {
     private final OrderDetailsRepository orderDetailsRepository;
     private final PaymentRepository paymentRepository;
     private final OrderMapper orderMapper;
+    private final EmailService emailService;
 
 
     /**
@@ -94,6 +96,23 @@ public class OrderServiceIMPL implements OrderService {
                 orderDetailsRepo.saveAll(orderDetails);
             }
             savePaymentDetails(requestOrderSaveDTO.getPaymentDetails(), order);
+            
+            // Send order confirmation email if customer email is provided
+            try {
+                if (requestOrderSaveDTO.getCustomerEmail() != null && !requestOrderSaveDTO.getCustomerEmail().isEmpty()) {
+                    String customerName = requestOrderSaveDTO.getCustomerName() != null ? 
+                        requestOrderSaveDTO.getCustomerName() : "Valued Customer";
+                    emailService.sendOrderConfirmationEmail(
+                        requestOrderSaveDTO.getCustomerEmail(), 
+                        customerName, 
+                        order
+                    );
+                }
+            } catch (Exception e) {
+                log.warn("Failed to send order confirmation email: {}", e.getMessage());
+                // Don't fail the order if email sending fails
+            }
+            
             return "saved";
         }
 
@@ -142,7 +161,15 @@ public class OrderServiceIMPL implements OrderService {
             log.info("order: " + order);
 //            sendOrderDetailsSms(requestOrderSaveDTO.getCustomerPhoneNumber(), order);
 
-            sendOrderConfirmationEmail(customerEmail, order);
+            // Send order confirmation email using EmailService
+            try {
+                String customerName = requestOrderSaveDTO.getCustomerName() != null ? 
+                    requestOrderSaveDTO.getCustomerName() : "Valued Customer";
+                emailService.sendOrderConfirmationEmail(customerEmail, customerName, order);
+            } catch (Exception e) {
+                log.warn("Failed to send order confirmation email: {}", e.getMessage());
+            }
+            
             return "saved";
         }
 
@@ -150,26 +177,8 @@ public class OrderServiceIMPL implements OrderService {
 
     }
 
-    private void sendOrderConfirmationEmail(String customerEmail, Order order) {
-        StringBuilder message = new StringBuilder();
-        message.append("Thank you for your order!\n\n");
-        message.append("Order ID: ").append(order.getOrderId()).append("\n");
-        message.append("Date: ").append(order.getOrderDate()).append("\n");
-        message.append("Total: ").append(order.getTotal()).append("\n\n");
-        message.append("Items:\n");
-
-        // Check if order.getOrderDetails() is not null
-        if (order.getOrderDetails() != null) {
-            for (OrderDetails orderDetails : order.getOrderDetails()) {
-                message.append(orderDetails.getName()).append(" - ").append(orderDetails.getAmount()).append("\n");
-            }
-        } else {
-            // Handle the case when order.getOrderDetails() is null
-            message.append("No order details found.");
-        }
-
-      //  emailService.sendEmail(customerEmail, "Your Order Confirmation", message.toString());
-    }
+    // Removed - Email sending is now handled by EmailService
+    // This method is replaced by EmailService.sendOrderConfirmationEmail()
 
     /**
      * Validates that an employee exists via Identity Service.
@@ -344,13 +353,11 @@ public class OrderServiceIMPL implements OrderService {
                             .flatMap(order -> order.getOrderDetails().stream())
                             .map(orderDetail -> {
                                 RequestOrderDetailsSaveDTO dto = modelMapper.map(orderDetail, RequestOrderDetailsSaveDTO.class);
-                                dto.setId(firstOrder.getOrderDetails().iterator().next().getItemId()); // Ensure the ID is set correctly
+                                // Use the orderDetail's itemId directly instead of accessing firstOrder's iterator
+                                dto.setId(orderDetail.getItemId());
                                 return dto;
                             })
                             .collect(Collectors.toList());
-
-                    // Limit orderDetails to the actual number of orders in the group
-                    //    orderDetails = orderDetails.stream().limit(ordersInGroup.size()).collect(Collectors.toList());
 
                     RequestPaymentDetailsDTO paymentDetails = ordersInGroup.stream()
                             .filter(order -> order.getPaymentDetails() != null && !order.getPaymentDetails().isEmpty())
@@ -372,12 +379,18 @@ public class OrderServiceIMPL implements OrderService {
                             new GroupedOrderDetails(orderDetails, paymentDetails, orderCount)
                     );
 
-                    Long itemId = firstOrder.getOrderDetails().iterator().next().getItemId();
-                    System.out.println(" item id: " + itemId);
-                    // Logging statements to debug and verify values
-                    System.out.println("Order ID: " + firstOrder.getOrderId());
-                    System.out.println("First Order Details ID: " + firstOrder.getOrderDetails().iterator().next().getOrderDetailsId());
-                    System.out.println("First Order Payed Amount: " + firstOrder.getPaymentDetails().iterator().next().getPaidAmount());
+                    // Only log if orderDetails is not empty
+                    if (!firstOrder.getOrderDetails().isEmpty()) {
+                        Long itemId = firstOrder.getOrderDetails().iterator().next().getItemId();
+                        log.debug("Item ID: {}", itemId);
+                        log.debug("Order ID: {}", firstOrder.getOrderId());
+                        log.debug("First Order Details ID: {}", firstOrder.getOrderDetails().iterator().next().getOrderDetailsId());
+                    }
+                    
+                    // Only log payment if paymentDetails is not empty
+                    if (!firstOrder.getPaymentDetails().isEmpty()) {
+                        log.debug("First Order Payed Amount: {}", firstOrder.getPaymentDetails().iterator().next().getPaidAmount());
+                    }
 
                     return orderResponseDTO;
                 })
