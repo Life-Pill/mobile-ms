@@ -74,6 +74,7 @@ public class OrderServiceIMPL implements OrderService {
         updateItemQuantities(requestOrderSaveDTO);
 
         Order order = new Order();
+        // Don't set orderId - let database auto-generate it
         order.setEmployerId(requestOrderSaveDTO.getEmployerId());
         order.setOrderDate(requestOrderSaveDTO.getOrderDate());
         order.setTotal(requestOrderSaveDTO.getTotal());
@@ -132,9 +133,8 @@ public class OrderServiceIMPL implements OrderService {
         String customerEmail = requestOrderSaveDTO.getCustomerEmail();
 
         Order order = new Order();
+        // Don't set orderId - let database auto-generate it
         order.setEmployerId(requestOrderSaveDTO.getEmployerId());
-        order.setOrderDate(requestOrderSaveDTO.getOrderDate());
-        order.setTotal(requestOrderSaveDTO.getTotal());
         order.setBranchId(requestOrderSaveDTO.getBranchId());
 
         orderRepository.save(order);
