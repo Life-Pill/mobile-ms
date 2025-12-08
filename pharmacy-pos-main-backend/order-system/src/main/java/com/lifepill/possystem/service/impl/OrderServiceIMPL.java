@@ -252,7 +252,7 @@ public class OrderServiceIMPL implements OrderService {
             try {
                 var response = inventoryServiceClient.getItemById(orderDetail.getId());
                 if (response != null && response.getBody() != null && 
-                    response.getBody().isSuccess() && response.getBody().getData() != null) {
+                    response.getBody().getCode() == 200 && response.getBody().getData() != null) {
                     MicroserviceItemDTO item = response.getBody().getData();
                     if (item.getItemQuantity() < orderDetail.getAmount()) {
                         throw new InsufficientItemQuantityException(
@@ -276,7 +276,7 @@ public class OrderServiceIMPL implements OrderService {
             try {
                 var response = inventoryServiceClient.getItemById(orderDetail.getId());
                 if (response != null && response.getBody() != null && 
-                    response.getBody().isSuccess() && response.getBody().getData() != null) {
+                    response.getBody().getCode() == 200 && response.getBody().getData() != null) {
                     MicroserviceItemDTO item = response.getBody().getData();
                     if (item.getItemQuantity() < orderDetail.getAmount()) {
                         throw new InsufficientItemQuantityException(

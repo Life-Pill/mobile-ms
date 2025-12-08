@@ -25,7 +25,7 @@ public interface InventoryServiceClient {
      * @param itemId the item ID
      * @return the item
      */
-    @GetMapping("/lifepill/v1/item/{itemId}")
+    @GetMapping("/lifepill/v1/item/get-item-details-by-id/{itemId}")
     @CircuitBreaker(name = "inventoryService", fallbackMethod = "getItemByIdFallback")
     @Retry(name = "inventoryService")
     ResponseEntity<MicroserviceApiResponse<MicroserviceItemDTO>> getItemById(@PathVariable Long itemId);
