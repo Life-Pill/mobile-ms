@@ -106,7 +106,8 @@ public class OrderServiceIMPL implements OrderService {
                     emailService.sendOrderConfirmationEmail(
                         requestOrderSaveDTO.getCustomerEmail(), 
                         customerName, 
-                        order
+                        order,
+                        requestOrderSaveDTO
                     );
                 }
             } catch (Exception e) {

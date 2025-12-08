@@ -84,18 +84,19 @@ public class EmailServiceImpl implements EmailService {
         html.append("<div class='order-info'>");
         html.append("<p><strong>Order ID:</strong> #").append(order.getOrderId()).append("</p>");
         html.append("<p><strong>Order Date:</strong> ").append(dateFormat.format(order.getOrderDate())).append("</p>");
-        html.append("<p><strong>Branch ID:</strong> ").append(order.getBranchId()).append("</p>");
+        html.append("<p><strong>Branch ID:</strong> ").append(orderDTO.getBranchId()).append("</p>");
+        html.append("<p><strong>Employee ID:</strong> ").append(orderDTO.getEmployerId()).append("</p>");
         html.append("</div>");
 
         // Order Items
         html.append("<div class='order-items'>");
         html.append("<h3>Items Ordered:</h3>");
         
-        if (order.getOrderDetails() != null && !order.getOrderDetails().isEmpty()) {
-            for (OrderDetails item : order.getOrderDetails()) {
+        if (orderDTO.getOrderDetails() != null && !orderDTO.getOrderDetails().isEmpty()) {
+            for (RequestOrderDetailsSaveDTO item : orderDTO.getOrderDetails()) {
                 html.append("<div class='item'>");
                 html.append("<span>").append(item.getName() != null ? item.getName() : "Item").append("</span>");
-                html.append("<span>").append(currencyFormat.format(item.getAmount())).append("</span>");
+                html.append("<span>Qty: ").append(item.getAmount() != null ? item.getAmount().intValue() : 0).append("</span>");
                 html.append("</div>");
             }
         } else {
@@ -104,19 +105,25 @@ public class EmailServiceImpl implements EmailService {
         html.append("</div>");
 
         // Payment Details
-        if (order.getPaymentDetails() != null && !order.getPaymentDetails().isEmpty()) {
-            PaymentDetails payment = order.getPaymentDetails().iterator().next();
-            html.append("<div class='order-info'>");
+        if (orderDTO.getPaymentDetails() != null) {
+            html.append("<div class='payment-details'>");
             html.append("<h3>Payment Information:</h3>");
+            
+            var payment = orderDTO.getPaymentDetails();
             html.append("<p><strong>Payment Method:</strong> ").append(payment.getPaymentMethod()).append("</p>");
+            html.append("<p><strong>Payment Date:</strong> ").append(dateFormat.format(payment.getPaymentDate())).append("</p>");
             html.append("<p><strong>Payment Amount:</strong> ").append(currencyFormat.format(payment.getPaymentAmount())).append("</p>");
+            
             if (payment.getPaymentDiscount() > 0) {
                 html.append("<p><strong>Discount:</strong> ").append(currencyFormat.format(payment.getPaymentDiscount())).append("</p>");
             }
-            html.append("<p><strong>Paid Amount:</strong> ").append(currencyFormat.format(payment.getPaidAmount())).append("</p>");
+            
+            html.append("<p><strong>Amount Paid:</strong> ").append(currencyFormat.format(payment.getPayedAmount())).append("</p>");
+            
             if (payment.getPaymentNotes() != null && !payment.getPaymentNotes().isEmpty()) {
                 html.append("<p><strong>Notes:</strong> ").append(payment.getPaymentNotes()).append("</p>");
             }
+            
             html.append("</div>");
         }
 
