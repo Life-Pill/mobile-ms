@@ -166,7 +166,17 @@ public class OrderServiceIMPL implements OrderService {
             try {
                 String customerName = requestOrderSaveDTO.getCustomerName() != null ? 
                     requestOrderSaveDTO.getCustomerName() : "Valued Customer";
-                emailService.sendOrderConfirmationEmail(customerEmail, customerName, order);
+                    
+                // Convert RequestOrderSMSDTO to RequestOrderSaveDTO for email
+                RequestOrderSaveDTO emailDTO = new RequestOrderSaveDTO();
+                emailDTO.setEmployerId(requestOrderSaveDTO.getEmployerId());
+                emailDTO.setBranchId(requestOrderSaveDTO.getBranchId());
+                emailDTO.setOrderDate(requestOrderSaveDTO.getOrderDate());
+                emailDTO.setTotal(requestOrderSaveDTO.getTotal());
+                emailDTO.setOrderDetails(requestOrderSaveDTO.getOrderDetails());
+                emailDTO.setPaymentDetails(requestOrderSaveDTO.getPaymentDetails());
+                
+                emailService.sendOrderConfirmationEmail(customerEmail, customerName, order, emailDTO);
             } catch (Exception e) {
                 log.warn("Failed to send order confirmation email: {}", e.getMessage());
             }
