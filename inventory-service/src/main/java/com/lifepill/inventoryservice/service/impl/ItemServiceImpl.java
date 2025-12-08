@@ -11,6 +11,7 @@ import com.lifepill.inventoryservice.repository.ItemCategoryRepository;
 import com.lifepill.inventoryservice.repository.ItemRepository;
 import com.lifepill.inventoryservice.repository.SupplierRepository;
 import com.lifepill.inventoryservice.service.ItemService;
+import com.lifepill.inventoryservice.service.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

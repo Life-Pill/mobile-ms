@@ -19,7 +19,7 @@ import java.util.List;
  * Controller class to handle branch summary related endpoints.
  */
 @RestController
-@RequestMapping("lifepill/v1/branch-summary")
+@RequestMapping("/lifepill/v1/order/branch-summary")
 @CrossOrigin(origins = "http://localhost:5173")
 @AllArgsConstructor
 public class BranchSummaryController {

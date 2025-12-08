@@ -18,6 +18,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -148,22 +149,33 @@ public class BranchController {
         return ResponseEntity.ok(ApiResponse.success("Branch profile image URL retrieved successfully", imageUrl));
     }
     
-    @PostMapping(value = "/save-branch", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    @PostMapping(value = "/save-branch", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Create a new branch with optional image", description = "Create a new pharmacy branch with optional image upload")
     public ResponseEntity<ApiResponse<BranchDTO>> saveBranch(
-            @RequestPart("branch") BranchRequestDTO requestDTO,
+            @RequestParam("branch") String branchJson,
             @RequestPart(value = "image", required = false) MultipartFile image) {
-        log.info("Creating new branch: {}", requestDTO.getBranchName());
-        BranchDTO createdBranch = branchService.createBranch(requestDTO);
         
-        // Upload image if provided
-        if (image != null && !image.isEmpty()) {
-            log.info("Uploading image for new branch ID: {}", createdBranch.getBranchId());
-            createdBranch = branchService.updateBranchImage(createdBranch.getBranchId(), image);
+        try {
+            // Parse JSON string to BranchRequestDTO
+            ObjectMapper objectMapper = new ObjectMapper();
+            BranchRequestDTO requestDTO = objectMapper.readValue(branchJson, BranchRequestDTO.class);
+            
+            log.info("Creating new branch: {}", requestDTO.getBranchName());
+            BranchDTO createdBranch = branchService.createBranch(requestDTO);
+            
+            // Upload image if provided
+            if (image != null && !image.isEmpty()) {
+                log.info("Uploading image for new branch ID: {}", createdBranch.getBranchId());
+                createdBranch = branchService.updateBranchImage(createdBranch.getBranchId(), image);
+            }
+            
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.created(createdBranch));
+        } catch (Exception e) {
+            log.error("Error creating branch: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(500, "Failed to create branch: " + e.getMessage()));
         }
-        
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created(createdBranch));
     }
 
 @GetMapping("/search-by-name")
