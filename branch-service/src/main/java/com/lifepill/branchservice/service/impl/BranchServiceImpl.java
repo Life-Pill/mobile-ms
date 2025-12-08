@@ -8,6 +8,7 @@ import com.lifepill.branchservice.exception.ResourceAlreadyExistsException;
 import com.lifepill.branchservice.exception.ResourceNotFoundException;
 import com.lifepill.branchservice.repository.BranchRepository;
 import com.lifepill.branchservice.service.BranchService;
+import com.lifepill.branchservice.service.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

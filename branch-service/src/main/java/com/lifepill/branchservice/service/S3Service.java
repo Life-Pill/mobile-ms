@@ -57,7 +57,7 @@ public class S3Service {
                     .bucket(bucketName)
                     .key(uniqueFileName)
                     .contentType(file.getContentType())
-                    .acl(ObjectCannedACL.PUBLIC_READ) // Make file publicly accessible
+                    // Removed ACL - bucket uses bucket policy for public access
                     .build();
 
             s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
