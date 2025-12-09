@@ -215,16 +215,69 @@ public class EmployerServiceImpl implements EmployerService {
         employer.setEmployerFirstName(requestDTO.getEmployerFirstName());
         employer.setEmployerLastName(requestDTO.getEmployerLastName());
         employer.setEmployerEmail(requestDTO.getEmployerEmail());
-        employer.setEmployerNicName(requestDTO.getEmployerFirstName().toLowerCase());
         employer.setBranchId(branchId);
-        employer.setActiveStatus(true);
+        employer.setActiveStatus(true); // Always set to true for new employers
         
-        // Set default values for required fields
-        employer.setEmployerSalary(50000.0); // Default salary
-        employer.setEmployerPhone("0000000000"); // Default phone
-        employer.setEmployerAddress("Not provided"); // Default address
-        employer.setEmployerNic("000000000V"); // Default NIC
-        employer.setGender(com.lifepill.identityservice.entity.enums.Gender.MALE); // Default gender
+        // Set employerNicName from request or default to lowercase firstName
+        if (requestDTO.getEmployerNicName() != null && !requestDTO.getEmployerNicName().isEmpty()) {
+            employer.setEmployerNicName(requestDTO.getEmployerNicName());
+        } else {
+            employer.setEmployerNicName(requestDTO.getEmployerFirstName().toLowerCase());
+        }
+        
+        // Set phone from request or default
+        if (requestDTO.getEmployerPhone() != null && !requestDTO.getEmployerPhone().isEmpty()) {
+            employer.setEmployerPhone(requestDTO.getEmployerPhone());
+        } else {
+            employer.setEmployerPhone("0000000000"); // Default phone
+        }
+        
+        // Set address from request or default
+        if (requestDTO.getEmployerAddress() != null && !requestDTO.getEmployerAddress().isEmpty()) {
+            employer.setEmployerAddress(requestDTO.getEmployerAddress());
+        } else {
+            employer.setEmployerAddress("Not provided"); // Default address
+        }
+        
+        // Set salary from request or default
+        if (requestDTO.getEmployerSalary() != null && requestDTO.getEmployerSalary() > 0) {
+            employer.setEmployerSalary(requestDTO.getEmployerSalary());
+        } else {
+            employer.setEmployerSalary(50000.0); // Default salary
+        }
+        
+        // Set NIC from request or default
+        if (requestDTO.getEmployerNic() != null && !requestDTO.getEmployerNic().isEmpty()) {
+            employer.setEmployerNic(requestDTO.getEmployerNic());
+        } else {
+            employer.setEmployerNic("000000000V"); // Default NIC
+        }
+        
+        // Set gender from request or default
+        if (requestDTO.getGender() != null && !requestDTO.getGender().isEmpty()) {
+            try {
+                employer.setGender(com.lifepill.identityservice.entity.enums.Gender.valueOf(requestDTO.getGender().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid gender value: {}, using default MALE", requestDTO.getGender());
+                employer.setGender(com.lifepill.identityservice.entity.enums.Gender.MALE);
+            }
+        } else {
+            employer.setGender(com.lifepill.identityservice.entity.enums.Gender.MALE); // Default gender
+        }
+        
+        // Set date of birth from request (parse String to Date)
+        if (requestDTO.getDateOfBirth() != null && !requestDTO.getDateOfBirth().isEmpty()) {
+            try {
+                java.text.SimpleDateFormat dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd");
+                dateFormat.setLenient(false);
+                employer.setDateOfBirth(dateFormat.parse(requestDTO.getDateOfBirth()));
+            } catch (java.text.ParseException e) {
+                log.warn("Invalid date format for dateOfBirth: {}, expected yyyy-MM-dd. Date will be null.", requestDTO.getDateOfBirth());
+                employer.setDateOfBirth(null);
+            }
+        } else {
+            employer.setDateOfBirth(null); // No default date
+        }
         
         // Set role
         if (requestDTO.getRole() != null) {

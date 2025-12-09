@@ -341,8 +341,15 @@ public class EmployerController {
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
             @RequestParam("employerFirstName") String employerFirstName,
             @RequestParam("employerLastName") String employerLastName,
+            @RequestParam(value = "employerNicName", required = false) String employerNicName,
             @RequestParam("employerEmail") String employerEmail,
             @RequestParam("employerPassword") String employerPassword,
+            @RequestParam(value = "employerPhone", required = false) String employerPhone,
+            @RequestParam(value = "employerAddress", required = false) String employerAddress,
+            @RequestParam(value = "employerSalary", required = false) Double employerSalary,
+            @RequestParam(value = "employerNic", required = false) String employerNic,
+            @RequestParam(value = "gender", required = false) String gender,
+            @RequestParam(value = "dateOfBirth", required = false) String dateOfBirth,
             @RequestParam("role") String role,
             @RequestParam("pin") Integer pin) {
         log.info("Create employer with image for branch: {}", branchId);
@@ -351,8 +358,15 @@ public class EmployerController {
             CreateEmployerRequestDTO requestDTO = CreateEmployerRequestDTO.builder()
                     .employerFirstName(employerFirstName)
                     .employerLastName(employerLastName)
+                    .employerNicName(employerNicName)
                     .employerEmail(employerEmail)
                     .employerPassword(employerPassword)
+                    .employerPhone(employerPhone)
+                    .employerAddress(employerAddress)
+                    .employerSalary(employerSalary)
+                    .employerNic(employerNic)
+                    .gender(gender)
+                    .dateOfBirth(dateOfBirth)
                     .role(role)
                     .pin(pin)
                     .build();
@@ -373,12 +387,20 @@ public class EmployerController {
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
             @RequestParam("employerFirstName") String employerFirstName,
             @RequestParam("employerLastName") String employerLastName,
+            @RequestParam(value = "employerNicName", required = false) String employerNicName,
             @RequestParam("employerEmail") String employerEmail,
             @RequestParam("employerPassword") String employerPassword,
+            @RequestParam(value = "employerPhone", required = false) String employerPhone,
+            @RequestParam(value = "employerAddress", required = false) String employerAddress,
+            @RequestParam(value = "employerSalary", required = false) Double employerSalary,
+            @RequestParam(value = "employerNic", required = false) String employerNic,
+            @RequestParam(value = "gender", required = false) String gender,
+            @RequestParam(value = "dateOfBirth", required = false) String dateOfBirth,
             @RequestParam("role") String role,
             @RequestParam("pin") Integer pin) {
         return saveEmployerWithImage(branchId, file, employerFirstName, employerLastName, 
-                employerEmail, employerPassword, role, pin);
+                employerNicName, employerEmail, employerPassword, employerPhone, employerAddress,
+                employerSalary, employerNic, gender, dateOfBirth, role, pin);
     }
 
     @GetMapping("/view-profile-image/{employerId}")
