@@ -261,7 +261,7 @@ services:
       - "9411:9411"
     environment:
       - STORAGE_TYPE=mem
-      - JAVA_OPTS=-Xms256m -Xmx512m
+      - JAVA_OPTS=-Xms512m -Xmx1024m
     networks:
       - lifepill-network
     healthcheck:

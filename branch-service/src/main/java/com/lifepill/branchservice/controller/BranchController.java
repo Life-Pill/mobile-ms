@@ -56,6 +56,14 @@ public class BranchController {
         return ResponseEntity.ok(ApiResponse.success(branch));
     }
     
+    @GetMapping("/get-branch/{branchId}")
+    @Operation(summary = "Get branch by ID (path variable)", description = "Retrieve a branch by its ID using path variable - for Feign clients")
+    public ResponseEntity<ApiResponse<BranchDTO>> getBranchByIdPath(@PathVariable Long branchId) {
+        log.info("Fetching branch with ID (path): {}", branchId);
+        BranchDTO branch = branchService.getBranchById(branchId);
+        return ResponseEntity.ok(ApiResponse.success(branch));
+    }
+    
     @GetMapping("/get-all-branches")
     @Operation(summary = "Get all branches", description = "Retrieve all pharmacy branches")
     public ResponseEntity<ApiResponse<List<BranchDTO>>> getAllBranches() {
