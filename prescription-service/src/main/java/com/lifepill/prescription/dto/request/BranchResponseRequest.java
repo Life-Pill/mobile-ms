@@ -1,9 +1,7 @@
 package com.lifepill.prescription.dto.request;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -39,16 +37,22 @@ public class BranchResponseRequest {
     @Builder
     public static class MedicineAvailabilityRequest {
         
-        @NotNull(message = "Medicine name is required")
+        @NotBlank(message = "Medicine name is required")
         private String medicineName;
+        
+        private Long itemId; // Optional: link to inventory item
+        private String itemBarCode;
+        private String measuringUnitType;
         
         @NotNull(message = "Availability status is required")
         private Boolean isAvailable;
         
-        @PositiveOrZero(message = "Quantity must be positive or zero")
+        private Boolean stock;
+        
+        @Min(value = 0, message = "Quantity must be non-negative")
         private Integer quantityAvailable;
         
-        @PositiveOrZero(message = "Unit price must be positive or zero")
+        @DecimalMin(value = "0.0", message = "Unit price must be non-negative")
         private BigDecimal unitPrice;
         
         private String notes;

@@ -35,8 +35,23 @@ public class MedicineAvailability {
     @Column(name = "medicine_name", nullable = false)
     private String medicineName;
     
+    @Column(name = "item_id")
+    private Long itemId; // Link to inventory service item
+    
+    @Column(name = "item_bar_code")
+    private String itemBarCode;
+    
+    @Column(name = "measuring_unit_type")
+    private String measuringUnitType; // TABLETS, CAPSULES, ML, etc.
+    
+    @Column(name = "branch_id")
+    private Long branchId; // Which branch has this medicine
+    
     @Column(name = "is_available", nullable = false)
     private Boolean isAvailable;
+    
+    @Column(name = "stock")
+    private Boolean stock; // Whether item is in stock at branch
     
     @Column(name = "quantity_available")
     private Integer quantityAvailable;

@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/prescriptions")
+@RequestMapping("/lifepill/v1/prescription")
 @RequiredArgsConstructor
 @Tag(name = "Prescription API", description = "Endpoints for managing prescriptions")
 public class PrescriptionController {

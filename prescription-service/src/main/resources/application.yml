@@ -46,3 +46,6 @@ aws:
     access-key: ${AWS_ACCESS_KEY_ID}
     secret-key: ${AWS_SECRET_ACCESS_KEY}
     bucket: ${AWS_S3_PRESCRIPTION_BUCKET}
+
+jwt:
+  secret: ${JWT_SECRET}
