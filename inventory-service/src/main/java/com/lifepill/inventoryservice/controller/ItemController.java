@@ -290,4 +290,43 @@ public class ItemController {
         List<ItemDTO> items = itemService.getLowStockItemsByBranch(branchId, threshold);
         return ResponseEntity.ok(ApiResponse.success(items));
     }
+    
+    @PutMapping("/reduce-stock")
+    @Operation(summary = "Reduce item stock", description = "Reduce stock quantity when an order is placed")
+    public ResponseEntity<ApiResponse<ItemDTO>> reduceStock(
+            @RequestParam Long itemId,
+            @RequestParam Long branchId,
+            @RequestParam Integer quantity) {
+        log.info("Reducing stock for item ID: {} at branch ID: {} by quantity: {}", itemId, branchId, quantity);
+        
+        try {
+            // Get the item
+            ItemDTO item = itemService.getItemById(itemId);
+            
+            // Validate branch matches
+            if (item.getBranchId() != null && !item.getBranchId().equals(branchId)) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error(400, "Item not found at specified branch"));
+            }
+            
+            // Check if enough stock available
+            if (item.getItemQuantity() < quantity) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error(400, "Insufficient stock. Available: " + item.getItemQuantity()));
+            }
+            
+            // Reduce the stock
+            Double newQuantity = item.getItemQuantity() - quantity;
+            itemService.updateStock(itemId, newQuantity);
+            
+            // Return updated item
+            ItemDTO updatedItem = itemService.getItemById(itemId);
+            return ResponseEntity.ok(ApiResponse.success("Stock reduced successfully", updatedItem));
+            
+        } catch (Exception e) {
+            log.error("Error reducing stock: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(500, "Failed to reduce stock: " + e.getMessage()));
+        }
+    }
 }

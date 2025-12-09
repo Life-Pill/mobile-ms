@@ -328,6 +328,12 @@ services:
       - JPA_DDL_AUTO=update
       # JWT Configuration (Same as user-auth for token validation)
       - JWT_SECRET=${JWT_SECRET}
+      # Email Configuration
+      - MAIL_HOST=${MAIL_HOST:-smtp.gmail.com}
+      - MAIL_PORT=${MAIL_PORT:-587}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_FROM=${MAIL_FROM:-lpramithamj@gmail.com}
       # AWS S3 Configuration
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
@@ -676,6 +682,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_REGION=${AWS_REGION:-us-east-1}
       - AWS_S3_PRESCRIPTION_BUCKET=${AWS_S3_PRESCRIPTION_BUCKET:-image-bucket-storage-new}
+      - JWT_SECRET=${JWT_SECRET}
       - LOG_PATH=/logs
     volumes:
       - ./logs/prescription-service:/logs

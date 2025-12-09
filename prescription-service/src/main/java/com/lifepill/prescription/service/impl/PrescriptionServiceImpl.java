@@ -84,6 +84,40 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         return mapToDTO(prescription);
     }
 
+    @Override
+    @Transactional
+    public PrescriptionResponse updatePrescription(UUID prescriptionId, PrescriptionUploadRequest request, UUID authenticatedUserId) {
+        Prescription prescription = prescriptionRepository.findById(prescriptionId)
+                .orElseThrow(() -> new RuntimeException("Prescription not found"));
+        
+        // Authorization check - only owner can update
+        if (!prescription.getUserId().equals(authenticatedUserId)) {
+            throw new RuntimeException("Unauthorized: You can only update your own prescriptions");
+        }
+        
+        // Update fields
+        prescription.setNotes(request.getNotes());
+        prescription = prescriptionRepository.save(prescription);
+        
+        log.info("Prescription {} updated by user {}", prescriptionId, authenticatedUserId);
+        return mapToDTO(prescription);
+    }
+
+    @Override
+    @Transactional
+    public void deletePrescription(UUID prescriptionId, UUID authenticatedUserId) {
+        Prescription prescription = prescriptionRepository.findById(prescriptionId)
+                .orElseThrow(() -> new RuntimeException("Prescription not found"));
+        
+        // Authorization check - only owner can delete
+        if (!prescription.getUserId().equals(authenticatedUserId)) {
+            throw new RuntimeException("Unauthorized: You can only delete your own prescriptions");
+        }
+        
+        prescriptionRepository.delete(prescription);
+        log.info("Prescription {} deleted by user {}", prescriptionId, authenticatedUserId);
+    }
+
     private PrescriptionResponse mapToDTO(Prescription prescription) {
         return PrescriptionResponse.builder()
                 .id(prescription.getId())

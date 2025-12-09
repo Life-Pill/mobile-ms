@@ -5,6 +5,7 @@ import com.lifepill.prescription.dto.response.PrescriptionResponse;
 import com.lifepill.prescription.service.PrescriptionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -48,5 +49,35 @@ public class PrescriptionController {
     @GetMapping("/{prescriptionId}")
     public ResponseEntity<PrescriptionResponse> getPrescription(@PathVariable UUID prescriptionId) {
         return ResponseEntity.ok(prescriptionService.getPrescription(prescriptionId));
+    }
+
+    @Operation(summary = "Update prescription notes")
+    @PutMapping("/{prescriptionId}")
+    public ResponseEntity<PrescriptionResponse> updatePrescription(
+            @PathVariable UUID prescriptionId,
+            @RequestParam String notes,
+            @RequestParam UUID userId,
+            HttpServletRequest request) {
+        
+        UUID authenticatedUserId = (UUID) request.getAttribute("userId");
+        
+        PrescriptionUploadRequest updateRequest = PrescriptionUploadRequest.builder()
+                .userId(userId)
+                .notes(notes)
+                .build();
+        
+        return ResponseEntity.ok(prescriptionService.updatePrescription(prescriptionId, updateRequest, authenticatedUserId));
+    }
+
+    @Operation(summary = "Delete prescription")
+    @DeleteMapping("/{prescriptionId}")
+    public ResponseEntity<Void> deletePrescription(
+            @PathVariable UUID prescriptionId,
+            HttpServletRequest request) {
+        
+        UUID authenticatedUserId = (UUID) request.getAttribute("userId");
+        prescriptionService.deletePrescription(prescriptionId, authenticatedUserId);
+        
+        return ResponseEntity.noContent().build();
     }
 }

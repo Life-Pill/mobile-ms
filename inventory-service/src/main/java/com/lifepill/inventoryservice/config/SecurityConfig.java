@@ -45,6 +45,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/lifepill/v1/item/**").hasAnyRole("OWNER", "MANAGER", "CASHIER", "USER")
                 
                 // Item WRITE - MANAGER and above
+                // Exception: Reduce stock allowed for USER (for creating orders)
+                .requestMatchers(HttpMethod.PUT, "/lifepill/v1/item/reduce-stock").hasAnyRole("OWNER", "MANAGER", "CASHIER", "USER")
                 .requestMatchers(HttpMethod.POST, "/lifepill/v1/item/**").hasAnyRole("OWNER", "MANAGER")
                 .requestMatchers(HttpMethod.PUT, "/lifepill/v1/item/**").hasAnyRole("OWNER", "MANAGER")
                 .requestMatchers(HttpMethod.PATCH, "/lifepill/v1/item/**").hasAnyRole("OWNER", "MANAGER")

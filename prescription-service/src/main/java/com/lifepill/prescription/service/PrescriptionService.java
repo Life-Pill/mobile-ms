@@ -11,7 +11,11 @@ public interface PrescriptionService {
     
     PrescriptionResponse uploadPrescription(PrescriptionUploadRequest request, MultipartFile file);
     
+    PrescriptionResponse getPrescription(UUID prescriptionId);
+    
     List<PrescriptionResponse> getUserPrescriptions(UUID userId);
     
-    PrescriptionResponse getPrescription(UUID prescriptionId);
+    PrescriptionResponse updatePrescription(UUID prescriptionId, PrescriptionUploadRequest request, UUID authenticatedUserId);
+    
+    void deletePrescription(UUID prescriptionId, UUID authenticatedUserId);
 }
