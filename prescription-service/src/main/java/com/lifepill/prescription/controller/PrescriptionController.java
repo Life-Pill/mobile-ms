@@ -27,7 +27,14 @@ public class PrescriptionController {
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<PrescriptionResponse> uploadPrescription(
             @RequestPart("file") MultipartFile file,
-            @RequestPart("request") PrescriptionUploadRequest request) {
+            @RequestParam("userId") UUID userId,
+            @RequestParam(value = "notes", required = false) String notes) {
+        
+        PrescriptionUploadRequest request = PrescriptionUploadRequest.builder()
+                .userId(userId)
+                .notes(notes)
+                .build();
+        
         return new ResponseEntity<>(prescriptionService.uploadPrescription(request, file), HttpStatus.CREATED);
     }
 
