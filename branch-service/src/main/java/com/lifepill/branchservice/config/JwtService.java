@@ -43,6 +43,32 @@ public class JwtService {
         return roles != null ? roles : List.of();
     }
 
+    /**
+     * Extract employee ID from JWT token (for POS users).
+     * Employee tokens include employerId claim.
+     */
+    public Long extractEmployerId(String token) {
+        Claims claims = extractAllClaims(token);
+        Object employerId = claims.get("employerId");
+        if (employerId instanceof Number) {
+            return ((Number) employerId).longValue();
+        }
+        return null;
+    }
+
+    /**
+     * Extract branch ID from JWT token (for POS users).
+     * Employee tokens include branchId claim.
+     */
+    public Long extractBranchId(String token) {
+        Claims claims = extractAllClaims(token);
+        Object branchId = claims.get("branchId");
+        if (branchId instanceof Number) {
+            return ((Number) branchId).longValue();
+        }
+        return null;
+    }
+
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);

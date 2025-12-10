@@ -9,8 +9,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import java.util.Date;
-import java.util.UUID;
+import java.util.*;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 /**
  * JWT Service for validating tokens from user-auth service.
@@ -49,7 +49,7 @@ public class JwtService {
     }
 
     /**
-     * Extracts user ID from token.
+     * Extracts user ID from token (for mobile user tokens).
      */
     public UUID extractUserId(String token) {
         Claims claims = extractAllClaims(token);
@@ -62,6 +62,65 @@ public class JwtService {
     public String extractEmail(String token) {
         Claims claims = extractAllClaims(token);
         return claims.get("email", String.class);
+    }
+
+    /**
+     * Checks if this is an employee token (from Employee Identity Service).
+     * Employee tokens don't have "type":"access" claim like mobile user tokens.
+     */
+    public boolean isEmployeeToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            String tokenType = claims.get("type", String.class);
+            // Mobile user tokens have type="access", employee tokens don't have this
+            return tokenType == null || !tokenType.equals("access");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Extracts employer ID from employee token.
+     */
+    public Long extractEmployerId(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            Object employerId = claims.get("employerId");
+            if (employerId instanceof Number) {
+                return ((Number) employerId).longValue();
+            }
+        } catch (Exception e) {
+            log.warn("Could not extract employerId from token: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Extracts subject (email for employee, UUID for mobile user).
+     */
+    public String extractSubject(String token) {
+        Claims claims = extractAllClaims(token);
+        return claims.getSubject();
+    }
+
+    /**
+     * Extracts roles from token (for POS/employee tokens).
+     */
+    @SuppressWarnings("unchecked")
+    public List<SimpleGrantedAuthority> extractRoles(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            Object rolesObj = claims.get("roles");
+            if (rolesObj instanceof List) {
+                List<String> roles = (List<String>) rolesObj;
+                return roles.stream()
+                        .map(role -> new SimpleGrantedAuthority(role.startsWith("ROLE_") ? role : "ROLE_" + role.toUpperCase()))
+                        .toList();
+            }
+        } catch (Exception e) {
+            log.warn("Could not extract roles from token: {}", e.getMessage());
+        }
+        return new ArrayList<>();
     }
 
     /**

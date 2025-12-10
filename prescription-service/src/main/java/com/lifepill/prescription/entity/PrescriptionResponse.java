@@ -43,8 +43,8 @@ public class PrescriptionResponse {
     @Column(name = "branch_id", nullable = false)
     private Long branchId;
     
-    @Column(name = "employer_id", nullable = false)
-    private UUID employerId;
+    @Column(name = "responding_to_user_id", nullable = false)
+    private UUID respondingToUserId;
     
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)

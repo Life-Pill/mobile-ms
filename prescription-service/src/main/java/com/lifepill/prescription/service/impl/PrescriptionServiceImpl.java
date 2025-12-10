@@ -222,7 +222,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         com.lifepill.prescription.entity.PrescriptionResponse response = com.lifepill.prescription.entity.PrescriptionResponse.builder()
                 .prescription(prescription)
                 .branchId(request.getBranchId())
-                .employerId(request.getEmployerId())
+                .respondingToUserId(request.getUserId())
                 .status(status)
                 .totalAmount(request.getTotalAmount())
                 .notes(request.getNotes())
@@ -276,7 +276,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         response.setStatus(status);
         response.setTotalAmount(request.getTotalAmount());
         response.setNotes(request.getNotes());
-        response.setEmployerId(request.getEmployerId());
+        response.setRespondingToUserId(request.getUserId());
         
         response = responseRepository.save(response);
         
@@ -395,7 +395,6 @@ public class PrescriptionServiceImpl implements PrescriptionService {
                 .branchLatitude(branchDetails != null ? branchDetails.getBranchLatitude() : null)
                 .branchLongitude(branchDetails != null ? branchDetails.getBranchLongitude() : null)
                 .branchLocation(branchDetails != null ? branchDetails.getBranchLocation() : null)
-                .employerId(response.getEmployerId())
                 .status(response.getStatus().name())
                 .totalAmount(response.getTotalAmount())
                 .notes(response.getNotes())
@@ -446,7 +445,6 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         return BranchResponseDTO.builder()
                 .id(response.getId())
                 .branchId(response.getBranchId())
-                .employerId(response.getEmployerId())
                 .status(response.getStatus().name())
                 .totalAmount(response.getTotalAmount())
                 .notes(response.getNotes())

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifePill - WebSocket Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #10b981;
+            --error: #ef4444;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.75rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .card h2 {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            color: var(--text);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--error);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--error);
+        }
+
+        .status-indicator.connected {
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .notification {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--success);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            color: var(--success);
+        }
+
+        .notification-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .notification-body {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .notification-details {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: var(--bg);
+            border-radius: 0.25rem;
+            font-family: monospace;
+            font-size: 0.75rem;
+            max-height: 150px;
+            overflow: auto;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+        }
+
+        #notificationArea {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔔 LifePill WebSocket Test</h1>
+
+        <div class="card">
+            <h2>Connection Settings</h2>
+
+            <label for="wsUrl">WebSocket URL</label>
+            <input type="text" id="wsUrl" value="http://localhost:8088/ws" placeholder="WebSocket URL">
+
+            <label for="jwtToken">JWT Access Token</label>
+            <textarea id="jwtToken" placeholder="Paste your JWT access token here..."></textarea>
+
+            <label for="userId">User ID</label>
+            <input type="text" id="userId" placeholder="Your user UUID (from token 'sub' claim)">
+
+            <div class="status">
+                <div class="status-indicator" id="statusIndicator"></div>
+                <span id="statusText">Disconnected</span>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-success" id="connectBtn" onclick="connect()">Connect</button>
+                <button class="btn btn-danger" id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+                <button class="btn btn-primary" onclick="clearNotifications()">Clear</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Notifications</h2>
+            <div id="notificationArea">
+                <div class="empty-state" id="emptyState">
+                    No notifications yet. Connect and wait for prescription responses.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let stompClient = null;
+        let subscription = null;
+
+        function connect() {
+            const wsUrl = document.getElementById('wsUrl').value;
+            const token = document.getElementById('jwtToken').value;
+            const userId = document.getElementById('userId').value;
+
+            if (!token || !userId) {
+                alert('Please enter both JWT token and User ID');
+                return;
+            }
+
+            // Try to extract userId from token if not provided
+            if (!userId && token) {
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    document.getElementById('userId').value = payload.sub;
+                } catch (e) {
+                    console.error('Could not extract userId from token');
+                }
+            }
+
+            const socket = new SockJS(wsUrl);
+            stompClient = Stomp.over(socket);
+
+            // Disable debug logging (comment out to see STOMP frames)
+            stompClient.debug = null;
+
+            const headers = {
+                'Authorization': 'Bearer ' + token
+            };
+
+            stompClient.connect(headers, function (frame) {
+                updateStatus(true, 'Connected');
+                console.log('Connected: ' + frame);
+
+                // Subscribe to user's prescription response topic
+                const topic = '/topic/user/' + userId + '/responses';
+                console.log('Subscribing to: ' + topic);
+
+                subscription = stompClient.subscribe(topic, function (message) {
+                    showNotification(JSON.parse(message.body));
+                });
+
+                // Also subscribe to broadcast prescriptions
+                stompClient.subscribe('/topic/prescriptions', function (message) {
+                    console.log('Broadcast prescription:', message.body);
+                });
+
+            }, function (error) {
+                updateStatus(false, 'Error: ' + error);
+                console.error('STOMP error:', error);
+            });
+        }
+
+        function disconnect() {
+            if (subscription) {
+                subscription.unsubscribe();
+            }
+            if (stompClient !== null) {
+                stompClient.disconnect();
+            }
+            updateStatus(false, 'Disconnected');
+        }
+
+        function updateStatus(connected, text) {
+            document.getElementById('statusIndicator').className =
+                'status-indicator' + (connected ? ' connected' : '');
+            document.getElementById('statusText').textContent = text;
+            document.getElementById('connectBtn').disabled = connected;
+            document.getElementById('disconnectBtn').disabled = !connected;
+        }
+
+        function showNotification(data) {
+            const area = document.getElementById('notificationArea');
+            const empty = document.getElementById('emptyState');
+            if (empty) empty.remove();
+
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+
+            const time = new Date().toLocaleTimeString();
+            const title = data.branchName || 'Prescription Response';
+            const status = data.status || 'RESPONSE';
+
+            notification.innerHTML = `
+                <div class="notification-header">
+                    <span class="notification-title">${title} - ${status}</span>
+                    <span class="notification-time">${time}</span>
+                </div>
+                <div class="notification-body">
+                    ${data.notes || 'A pharmacy has responded to your prescription.'}
+                </div>
+                <details>
+                    <summary style="cursor: pointer; margin-top: 0.5rem; font-size: 0.8rem; color: #94a3b8;">
+                        View Details
+                    </summary>
+                    <div class="notification-details">
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                </details>
+            `;
+
+            area.insertBefore(notification, area.firstChild);
+        }
+
+        function clearNotifications() {
+            const area = document.getElementById('notificationArea');
+            area.innerHTML = `
+                <div class="empty-state" id="emptyState">
+                    No notifications yet. Connect and wait for prescription responses.
+                </div>
+            `;
+        }
+
+        // Auto-extract userId when token is pasted
+        document.getElementById('jwtToken').addEventListener('input', function (e) {
+            const token = e.target.value.trim();
+            if (token) {
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    if (payload.sub) {
+                        document.getElementById('userId').value = payload.sub;
+                    }
+                } catch (e) {
+                    // Ignore parsing errors
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

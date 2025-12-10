@@ -38,9 +38,7 @@ public class PrescriptionResponseEvent implements Serializable {
     private Double branchLongitude;
     private String branchLocation;
     
-    // Employer info (POS user who responded)
-    private UUID employerId;
-    private String employerName;
+    // Note: userId above is the prescription owner who receives notifications
     
     // Response details
     private String status; // AVAILABLE, PARTIALLY_AVAILABLE, NOT_AVAILABLE

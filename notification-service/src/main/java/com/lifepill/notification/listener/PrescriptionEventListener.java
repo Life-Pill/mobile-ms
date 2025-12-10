@@ -96,8 +96,6 @@ public class PrescriptionEventListener {
                     .branchLatitude(parseDouble(eventData.get("branchLatitude")))
                     .branchLongitude(parseDouble(eventData.get("branchLongitude")))
                     .branchLocation((String) eventData.get("branchLocation"))
-                    .employerId(parseUUID(eventData.get("employerId")))
-                    .employerName((String) eventData.get("employerName"))
                     .status((String) eventData.get("status"))
                     .notes((String) eventData.get("notes"))
                     .eventType((String) eventData.getOrDefault("eventType", "PRESCRIPTION_RESPONSE"))

@@ -18,8 +18,8 @@ public class BranchResponseRequest {
     @NotNull(message = "Branch ID is required")
     private Long branchId;
     
-    @NotNull(message = "Employer ID is required")
-    private UUID employerId; // The POS user (pharmacist/cashier) submitting the response
+    @NotNull(message = "User ID is required")
+    private UUID userId; // The prescription owner (mobile user) to notify
     
     /**
      * Response status: AVAILABLE, PARTIALLY_AVAILABLE, NOT_AVAILABLE

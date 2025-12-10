@@ -17,6 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -47,25 +48,59 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String jwt = getJwtFromRequest(request);
 
             if (StringUtils.hasText(jwt) && jwtService.validateToken(jwt)) {
-                UUID userId = jwtService.extractUserId(jwt);
-                String email = jwtService.extractEmail(jwt);
+                
+                // Check if this is an employee token or mobile user token
+                if (jwtService.isEmployeeToken(jwt)) {
+                    // Employee/POS token from Employee Identity Service
+                    String email = jwtService.extractSubject(jwt);
+                    
+                    // Get roles from token or default to EMPLOYEE role
+                    List<SimpleGrantedAuthority> authorities = jwtService.extractRoles(jwt);
+                    if (authorities.isEmpty()) {
+                        authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_EMPLOYEE"));
+                    }
+                    
+                    // Create authentication with roles from token
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    email,
+                                    null,
+                                    authorities
+                            );
 
-                // Create authentication with USER role
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userId.toString(),
-                                null,
-                                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
-                        );
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    // Add employee info to request attributes if available
+                    Long employerId = jwtService.extractEmployerId(jwt);
+                    if (employerId != null) {
+                        request.setAttribute("employerId", employerId);
+                    }
+                    request.setAttribute("employerEmail", email);
 
-                // Add user info to request attributes for controllers
-                request.setAttribute("userId", userId);
-                request.setAttribute("userEmail", email);
+                    log.debug("Set authentication for employee: {} with roles: {}", email, authorities);
+                } else {
+                    // Mobile user token from user-auth service
+                    UUID userId = jwtService.extractUserId(jwt);
+                    String email = jwtService.extractEmail(jwt);
 
-                log.debug("Set authentication for user: {}", userId);
+                    // Create authentication with USER role
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    userId.toString(),
+                                    null,
+                                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+                            );
+
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                    // Add user info to request attributes for controllers
+                    request.setAttribute("userId", userId);
+                    request.setAttribute("userEmail", email);
+
+                    log.debug("Set authentication for user: {}", userId);
+                }
             }
         } catch (Exception ex) {
             log.error("Could not set user authentication in security context", ex);

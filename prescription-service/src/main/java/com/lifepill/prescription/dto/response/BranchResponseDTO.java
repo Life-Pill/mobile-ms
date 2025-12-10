@@ -23,7 +23,7 @@ public class BranchResponseDTO {
     private Double branchLatitude;
     private Double branchLongitude;
     private String branchLocation;
-    private UUID employerId;
+    // Note: userId comes from the prescription owner
     private String status;
     private BigDecimal totalAmount;
     private String notes;
