@@ -11,6 +11,7 @@ import java.util.UUID;
 /**
  * Event DTO published when a branch responds to a prescription.
  * This event is consumed by the Notification Service to notify the mobile user.
+ * Includes full branch details for mobile app display.
  */
 @Getter
 @Setter
@@ -24,10 +25,24 @@ public class PrescriptionResponseEvent implements Serializable {
     private UUID responseId;
     private UUID prescriptionId;
     private UUID userId; // The prescription owner to notify
-    private UUID branchId;
+    
+    // Branch identification
+    private Long branchId;
     private String branchName;
-    private UUID pharmacistId;
-    private String pharmacistName;
+    
+    // Branch details for mobile app
+    private String branchAddress;
+    private String branchContact;
+    private String branchEmail;
+    private Double branchLatitude;
+    private Double branchLongitude;
+    private String branchLocation;
+    
+    // Employer info (POS user who responded)
+    private UUID employerId;
+    private String employerName;
+    
+    // Response details
     private String status; // AVAILABLE, PARTIALLY_AVAILABLE, NOT_AVAILABLE
     private BigDecimal totalAmount;
     private String notes;
@@ -52,3 +67,4 @@ public class PrescriptionResponseEvent implements Serializable {
         private BigDecimal unitPrice;
     }
 }
+

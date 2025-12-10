@@ -19,7 +19,7 @@ public class OrderPlacementResponse {
     
     private UUID orderId;
     private UUID prescriptionId;
-    private UUID branchId;
+    private Long branchId;
     private String branchName;
     private UUID userId;
     private String status;

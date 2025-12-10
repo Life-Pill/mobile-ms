@@ -16,10 +16,16 @@ import java.util.UUID;
 public class BranchResponseRequest {
     
     @NotNull(message = "Branch ID is required")
-    private UUID branchId;
+    private Long branchId;
     
-    @NotNull(message = "Pharmacist ID is required")
-    private UUID pharmacistId;
+    @NotNull(message = "Employer ID is required")
+    private UUID employerId; // The POS user (pharmacist/cashier) submitting the response
+    
+    /**
+     * Response status: AVAILABLE, PARTIALLY_AVAILABLE, NOT_AVAILABLE
+     * If not provided, status will be determined from medicine availability.
+     */
+    private String status;
     
     @NotEmpty(message = "At least one medicine must be specified")
     @Valid

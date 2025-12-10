@@ -46,6 +46,9 @@ public class SecurityConfig {
                 // Branch exists check - internal service call
                 .requestMatchers("/lifepill/v1/branch/exists/**").permitAll()
                 
+                // Branch details by ID - internal service call (prescription-service needs this)
+                .requestMatchers(HttpMethod.GET, "/lifepill/v1/branch/{branchId}").permitAll()
+                
                 // Branch READ endpoints - CASHIER and above (including mobile USER)
                 .requestMatchers(HttpMethod.GET, "/lifepill/v1/branch/**").hasAnyRole("OWNER", "MANAGER", "CASHIER", "USER")
                 .requestMatchers(HttpMethod.GET, "/lifepill/v1/branch-summary/**").hasAnyRole("OWNER", "MANAGER", "CASHIER", "USER")

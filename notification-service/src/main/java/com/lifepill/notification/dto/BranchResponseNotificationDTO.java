@@ -10,6 +10,7 @@ import java.util.UUID;
 
 /**
  * DTO for branch response notification sent to mobile users.
+ * Includes full branch details for displaying in mobile app.
  */
 @Getter
 @Setter
@@ -22,10 +23,25 @@ public class BranchResponseNotificationDTO implements Serializable {
     
     private UUID responseId;
     private UUID prescriptionId;
-    private UUID branchId;
+    private UUID userId; // The prescription owner to notify
+    
+    // Branch identification
+    private Long branchId;
     private String branchName;
-    private UUID pharmacistId;
-    private String pharmacistName;
+    
+    // Branch details for mobile app display
+    private String branchAddress;
+    private String branchContact;
+    private String branchEmail;
+    private Double branchLatitude;
+    private Double branchLongitude;
+    private String branchLocation;
+    
+    // Employer info (POS user who responded)
+    private UUID employerId;
+    private String employerName;
+    
+    // Response details
     private String status; // AVAILABLE, PARTIALLY_AVAILABLE, NOT_AVAILABLE
     private BigDecimal totalAmount;
     private String notes;
@@ -50,3 +66,4 @@ public class BranchResponseNotificationDTO implements Serializable {
         private BigDecimal unitPrice;
     }
 }
+

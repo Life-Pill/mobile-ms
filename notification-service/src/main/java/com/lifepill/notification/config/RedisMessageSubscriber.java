@@ -50,12 +50,23 @@ public class RedisMessageSubscriber {
     public void handleUserMessage(String message) {
         try {
             log.debug("Received user notification from Redis: {}", message);
-            BranchResponseNotificationDTO notification = objectMapper.readValue(message, BranchResponseNotificationDTO.class);
             
-            // Send to user-specific topic
-            String destination = String.format("/topic/user/%s/responses", notification.getPrescriptionId());
-            messagingTemplate.convertAndSend(destination, notification);
-            log.info("Sent notification to user WebSocket: {}", destination);
+            // Handle double-quoted JSON string from Redis
+            String jsonMessage = message;
+            if (message.startsWith("\"") && message.endsWith("\"")) {
+                jsonMessage = message.substring(1, message.length() - 1).replace("\\\"", "\"");
+            }
+            
+            BranchResponseNotificationDTO notification = objectMapper.readValue(jsonMessage, BranchResponseNotificationDTO.class);
+            
+            // Send to user-specific topic (userId-based for single subscription point)
+            if (notification.getUserId() != null) {
+                String destination = String.format("/topic/user/%s/responses", notification.getUserId());
+                messagingTemplate.convertAndSend(destination, notification);
+                log.info("Sent notification to user WebSocket: {}", destination);
+            } else {
+                log.warn("Cannot send notification - userId is null in notification");
+            }
         } catch (Exception e) {
             log.error("Error processing user message from Redis: {}", e.getMessage(), e);
         }

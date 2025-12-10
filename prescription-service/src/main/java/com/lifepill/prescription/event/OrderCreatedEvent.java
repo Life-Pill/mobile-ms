@@ -24,7 +24,7 @@ public class OrderCreatedEvent implements Serializable {
     private UUID orderId;
     private UUID prescriptionId;
     private UUID userId;
-    private UUID branchId;
+    private Long branchId;
     private UUID responseId;
     private BigDecimal totalAmount;
     private String deliveryAddress;

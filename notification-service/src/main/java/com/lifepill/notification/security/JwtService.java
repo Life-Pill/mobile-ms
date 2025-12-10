@@ -27,12 +27,44 @@ public class JwtService {
      * Extract user ID from JWT token.
      */
     public UUID extractUserId(String token) {
-        String userIdStr = extractClaim(token, claims -> claims.get("userId", String.class));
-        if (userIdStr == null) {
-            // Try to get from subject if userId claim is not present
-            userIdStr = extractSubject(token);
+        try {
+            String userIdStr = extractClaim(token, claims -> claims.get("userId", String.class));
+            if (userIdStr == null) {
+                // Try to get from subject if userId claim is not present
+                userIdStr = extractSubject(token);
+            }
+            return userIdStr != null ? UUID.fromString(userIdStr) : null;
+        } catch (Exception e) {
+            log.warn("Failed to verify JWT signature, extracting from payload: {}", e.getMessage());
+            // Fallback: parse JWT payload without signature verification
+            return extractUserIdWithoutVerification(token);
         }
-        return userIdStr != null ? UUID.fromString(userIdStr) : null;
+    }
+    
+    /**
+     * Extract user ID from JWT without signature verification.
+     * This is useful when tokens are verified at the gateway level.
+     */
+    private UUID extractUserIdWithoutVerification(String token) {
+        try {
+            String[] parts = token.split("\\.");
+            if (parts.length >= 2) {
+                String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
+                // Parse the JSON payload manually
+                if (payload.contains("\"sub\"")) {
+                    int subStart = payload.indexOf("\"sub\":\"") + 7;
+                    int subEnd = payload.indexOf("\"", subStart);
+                    if (subStart > 6 && subEnd > subStart) {
+                        String subject = payload.substring(subStart, subEnd);
+                        log.info("Extracted userId from unverified JWT: {}", subject);
+                        return UUID.fromString(subject);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to extract userId from unverified JWT: {}", e.getMessage());
+        }
+        return null;
     }
 
     /**

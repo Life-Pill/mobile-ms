@@ -15,11 +15,19 @@ import java.util.UUID;
 public class BranchResponseDTO {
     
     private UUID id;
-    private UUID branchId;
-    private UUID pharmacistId;
+    private Long branchId;
+    private String branchName;
+    private String branchAddress;
+    private String branchContact;
+    private String branchEmail;
+    private Double branchLatitude;
+    private Double branchLongitude;
+    private String branchLocation;
+    private UUID employerId;
     private String status;
     private BigDecimal totalAmount;
     private String notes;
     private LocalDateTime responseTimestamp;
     private List<MedicineAvailabilityDTO> medicines;
 }
+

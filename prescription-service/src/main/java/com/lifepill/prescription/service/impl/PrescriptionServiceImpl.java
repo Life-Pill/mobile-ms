@@ -1,5 +1,7 @@
 package com.lifepill.prescription.service.impl;
 
+import com.lifepill.prescription.client.BranchDetailsDTO;
+import com.lifepill.prescription.client.BranchServiceClient;
 import com.lifepill.prescription.config.RabbitMQConfig;
 import com.lifepill.prescription.dto.request.BranchResponseRequest;
 import com.lifepill.prescription.dto.request.MobilePrescriptionUploadRequest;
@@ -45,6 +47,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     private final MedicineAvailabilityRepository medicineAvailabilityRepository;
     private final S3Client s3Client;
     private final RabbitTemplate rabbitTemplate;
+    private final BranchServiceClient branchServiceClient;
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
@@ -219,7 +222,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         com.lifepill.prescription.entity.PrescriptionResponse response = com.lifepill.prescription.entity.PrescriptionResponse.builder()
                 .prescription(prescription)
                 .branchId(request.getBranchId())
-                .pharmacistId(request.getPharmacistId())
+                .employerId(request.getEmployerId())
                 .status(status)
                 .totalAmount(request.getTotalAmount())
                 .notes(request.getNotes())
@@ -273,7 +276,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         response.setStatus(status);
         response.setTotalAmount(request.getTotalAmount());
         response.setNotes(request.getNotes());
-        response.setPharmacistId(request.getPharmacistId());
+        response.setEmployerId(request.getEmployerId());
         
         response = responseRepository.save(response);
         
@@ -312,9 +315,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         
         return mapToResponseDTO(response);
     }
-    
-    // ======================== Helper Methods ========================
-    
+        
     private ResponseStatus determineResponseStatus(List<BranchResponseRequest.MedicineAvailabilityRequest> medicines) {
         if (medicines == null || medicines.isEmpty()) {
             return ResponseStatus.REVIEWING;
@@ -348,7 +349,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
                         .itemId(med.getItemId())
                         .itemBarCode(med.getItemBarCode())
                         .measuringUnitType(med.getMeasuringUnitType())
-                        .branchId(response.getBranchId() != null ? response.getBranchId().getLeastSignificantBits() : null)
+                        .branchId(response.getBranchId())
                         .isAvailable(med.getIsAvailable())
                         .stock(med.getStock())
                         .quantityAvailable(med.getQuantityAvailable())
@@ -372,12 +373,29 @@ public class PrescriptionServiceImpl implements PrescriptionService {
                         .build())
                 .collect(Collectors.toList());
         
+        // Fetch branch details from branch-service
+        BranchDetailsDTO branchDetails = null;
+        try {
+            branchDetails = branchServiceClient.getBranchById(response.getBranchId());
+            log.info("Fetched branch details for branchId: {}", response.getBranchId());
+        } catch (Exception e) {
+            log.warn("Failed to fetch branch details for branchId: {}. Error: {}", 
+                    response.getBranchId(), e.getMessage());
+        }
+        
         return PrescriptionResponseEvent.builder()
                 .responseId(response.getId())
                 .prescriptionId(prescription.getId())
                 .userId(prescription.getUserId())
                 .branchId(response.getBranchId())
-                .pharmacistId(response.getPharmacistId())
+                .branchName(branchDetails != null ? branchDetails.getBranchName() : "Unknown Branch")
+                .branchAddress(branchDetails != null ? branchDetails.getBranchAddress() : null)
+                .branchContact(branchDetails != null ? branchDetails.getBranchContact() : null)
+                .branchEmail(branchDetails != null ? branchDetails.getBranchEmail() : null)
+                .branchLatitude(branchDetails != null ? branchDetails.getBranchLatitude() : null)
+                .branchLongitude(branchDetails != null ? branchDetails.getBranchLongitude() : null)
+                .branchLocation(branchDetails != null ? branchDetails.getBranchLocation() : null)
+                .employerId(response.getEmployerId())
                 .status(response.getStatus().name())
                 .totalAmount(response.getTotalAmount())
                 .notes(response.getNotes())
@@ -428,7 +446,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         return BranchResponseDTO.builder()
                 .id(response.getId())
                 .branchId(response.getBranchId())
-                .pharmacistId(response.getPharmacistId())
+                .employerId(response.getEmployerId())
                 .status(response.getStatus().name())
                 .totalAmount(response.getTotalAmount())
                 .notes(response.getNotes())
