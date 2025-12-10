@@ -2,6 +2,7 @@ package com.lifepill.prescription.service.impl;
 
 import com.lifepill.prescription.config.RabbitMQConfig;
 import com.lifepill.prescription.dto.request.BranchResponseRequest;
+import com.lifepill.prescription.dto.request.MobilePrescriptionUploadRequest;
 import com.lifepill.prescription.dto.request.PrescriptionUploadRequest;
 import com.lifepill.prescription.dto.response.BranchResponseDTO;
 import com.lifepill.prescription.dto.response.MedicineAvailabilityDTO;
@@ -88,6 +89,39 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         
         rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY_UPLOADED, event);
         log.info("Published prescription uploaded event for prescription: {}", prescription.getId());
+
+        return mapToDTO(prescription);
+    }
+
+    @Override
+    @Transactional
+    public PrescriptionResponse uploadPrescriptionMobile(MobilePrescriptionUploadRequest request) {
+        // Mobile upload - image URL is already provided, just save to DB
+        log.info("Processing mobile prescription upload for user: {}", request.getUserId());
+        
+        Prescription prescription = Prescription.builder()
+                .userId(request.getUserId())
+                .imageUrl(request.getImageUrl())
+                .notes(request.getNotes())
+                .status(Prescription.PrescriptionStatus.UPLOADED)
+                .uploadTimestamp(LocalDateTime.now())
+                .build();
+
+        prescription = prescriptionRepository.save(prescription);
+        log.info("Saved mobile prescription: {} for user: {}", prescription.getId(), request.getUserId());
+
+        // Publish Event for notification (same as regular upload)
+        PrescriptionUploadedEvent event = PrescriptionUploadedEvent.builder()
+                .prescriptionId(prescription.getId())
+                .userId(prescription.getUserId())
+                .imageUrl(prescription.getImageUrl())
+                .notes(prescription.getNotes())
+                .status(prescription.getStatus().name())
+                .uploadTimestamp(prescription.getUploadTimestamp())
+                .build();
+        
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY_UPLOADED, event);
+        log.info("Published prescription uploaded event for mobile prescription: {}", prescription.getId());
 
         return mapToDTO(prescription);
     }

@@ -1,6 +1,7 @@
 package com.lifepill.prescription.controller;
 
 import com.lifepill.prescription.dto.request.BranchResponseRequest;
+import com.lifepill.prescription.dto.request.MobilePrescriptionUploadRequest;
 import com.lifepill.prescription.dto.request.PrescriptionUploadRequest;
 import com.lifepill.prescription.dto.response.BranchResponseDTO;
 import com.lifepill.prescription.dto.response.PrescriptionResponse;
@@ -43,6 +44,15 @@ public class PrescriptionController {
                 .build();
         
         return new ResponseEntity<>(prescriptionService.uploadPrescription(request, file), HttpStatus.CREATED);
+    }
+
+    @Operation(summary = "Upload prescription from mobile (saves to DB only)",
+            description = "Mobile endpoint that accepts prescription data with already-uploaded image URL and saves directly to database")
+    @PostMapping(value = "/upload-mobile")
+    public ResponseEntity<PrescriptionResponse> uploadPrescriptionMobile(
+            @RequestBody @Valid MobilePrescriptionUploadRequest request) {
+        
+        return new ResponseEntity<>(prescriptionService.uploadPrescriptionMobile(request), HttpStatus.CREATED);
     }
 
     @Operation(summary = "Get all prescriptions for a user")

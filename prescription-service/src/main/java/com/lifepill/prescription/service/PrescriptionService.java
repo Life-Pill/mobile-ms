@@ -1,6 +1,7 @@
 package com.lifepill.prescription.service;
 
 import com.lifepill.prescription.dto.request.BranchResponseRequest;
+import com.lifepill.prescription.dto.request.MobilePrescriptionUploadRequest;
 import com.lifepill.prescription.dto.request.PlaceOrderRequest;
 import com.lifepill.prescription.dto.request.PrescriptionUploadRequest;
 import com.lifepill.prescription.dto.response.BranchResponseDTO;
@@ -15,6 +16,8 @@ public interface PrescriptionService {
     
     // Prescription CRUD operations
     PrescriptionResponse uploadPrescription(PrescriptionUploadRequest request, MultipartFile file);
+    
+    PrescriptionResponse uploadPrescriptionMobile(MobilePrescriptionUploadRequest request);
     
     PrescriptionResponse getPrescription(UUID prescriptionId);
     
