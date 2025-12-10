@@ -11,9 +11,18 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
 
+    // Exchange
     public static final String EXCHANGE = "prescription.exchange";
+    
+    // Queues
     public static final String QUEUE_NOTIFICATION = "prescription.notification.queue";
+    public static final String QUEUE_USER_NOTIFICATION = "prescription.user.notification.queue";
+    public static final String QUEUE_ORDER = "prescription.order.queue";
+    
+    // Routing Keys
     public static final String ROUTING_KEY_UPLOADED = "prescription.uploaded";
+    public static final String ROUTING_KEY_RESPONSE = "prescription.response";
+    public static final String ROUTING_KEY_ORDER = "prescription.order";
 
     @Bean
     public TopicExchange exchange() {
@@ -22,12 +31,32 @@ public class RabbitMQConfig {
 
     @Bean
     public Queue notificationQueue() {
-        return new Queue(QUEUE_NOTIFICATION);
+        return QueueBuilder.durable(QUEUE_NOTIFICATION).build();
+    }
+    
+    @Bean
+    public Queue userNotificationQueue() {
+        return QueueBuilder.durable(QUEUE_USER_NOTIFICATION).build();
+    }
+    
+    @Bean
+    public Queue orderQueue() {
+        return QueueBuilder.durable(QUEUE_ORDER).build();
     }
 
     @Bean
-    public Binding binding(Queue queue, TopicExchange exchange) {
-        return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY_UPLOADED);
+    public Binding prescriptionUploadedBinding(Queue notificationQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(notificationQueue).to(exchange).with(ROUTING_KEY_UPLOADED);
+    }
+    
+    @Bean
+    public Binding prescriptionResponseBinding(Queue userNotificationQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(userNotificationQueue).to(exchange).with(ROUTING_KEY_RESPONSE);
+    }
+    
+    @Bean
+    public Binding orderBinding(Queue orderQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(orderQueue).to(exchange).with(ROUTING_KEY_ORDER);
     }
 
     @Bean

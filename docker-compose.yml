@@ -722,14 +722,28 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-rabbitmq123}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=notification_db
+      - DB_USER=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
       - EUREKA_URI=http://admin:${EUREKA_PASSWORD:-admin}@service-registry:8761/eureka/
+      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
+      - TRACING_SAMPLING_PROBABILITY=1.0
+      - JWT_SECRET=${JWT_SECRET}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - FCM_ENABLED=${FCM_ENABLED:-false}
+      - FCM_CREDENTIALS_PATH=${FCM_CREDENTIALS_PATH:-}
       - LOG_PATH=/logs
     volumes:
       - ./logs/notification-service:/logs
+      - ./config/fcm:/app/config/fcm
     networks:
       - lifepill-network
     depends_on:
       service-registry:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
