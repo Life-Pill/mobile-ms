@@ -732,8 +732,8 @@ services:
       - TRACING_SAMPLING_PROBABILITY=1.0
       - JWT_SECRET=${JWT_SECRET}
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
-      - FCM_ENABLED=${FCM_ENABLED:-false}
-      - FCM_CREDENTIALS_PATH=${FCM_CREDENTIALS_PATH:-}
+      - FCM_ENABLED=true
+      - FCM_CREDENTIALS_PATH=/app/config/fcm/service-account.json
       - LOG_PATH=/logs
     volumes:
       - ./logs/notification-service:/logs

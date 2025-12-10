@@ -23,3 +23,8 @@ docker-compose.local.yml
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# FCM Credentials (NEVER commit secrets)
+config/fcm/
+*.json.bak
+*-service-account.json
