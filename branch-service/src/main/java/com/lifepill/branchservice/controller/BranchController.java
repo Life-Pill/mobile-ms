@@ -63,6 +63,14 @@ public class BranchController {
         BranchDTO branch = branchService.getBranchById(branchId);
         return ResponseEntity.ok(ApiResponse.success(branch));
     }
+
+    @GetMapping("/{branchId}")
+    @Operation(summary = "Get branch by ID", description = "Retrieve a branch by its ID (standard path)")
+    public ResponseEntity<ApiResponse<BranchDTO>> getBranchByIdStandard(@PathVariable Long branchId) {
+        log.info("Fetching branch with ID (standard): {}", branchId);
+        BranchDTO branch = branchService.getBranchById(branchId);
+        return ResponseEntity.ok(ApiResponse.success(branch));
+    }
     
     @GetMapping("/get-all-branches")
     @Operation(summary = "Get all branches", description = "Retrieve all pharmacy branches")
