@@ -54,13 +54,19 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Main WebSocket endpoint with SockJS fallback
+        // Set allowed origins so SockJS doesn't reject CORS requests
+        // Filter will remove duplicate CORS headers, keeping only Gateway headers
         registry.addEndpoint("/ws")
+                .setAllowedOriginPatterns("*")
                 .withSockJS()
                 .setHeartbeatTime(25000)
                 .setDisconnectDelay(5000);
         
-        // Direct WebSocket endpoint (no SockJS)  
-        registry.addEndpoint("/ws");
+        // Direct WebSocket endpoint (no SockJS)
+        // Set allowed origins to prevent rejection
+        // Filter will remove duplicate CORS headers, keeping only Gateway headers
+        registry.addEndpoint("/ws")
+                .setAllowedOriginPatterns("*");
     }
 
     @Override

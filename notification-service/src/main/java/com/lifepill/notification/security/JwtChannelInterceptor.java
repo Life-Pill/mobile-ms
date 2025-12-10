@@ -70,7 +70,6 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
                 log.debug("No Authorization header on WebSocket CONNECT - anonymous connection");
             }
         }
-        
         return message;
     }
 }
