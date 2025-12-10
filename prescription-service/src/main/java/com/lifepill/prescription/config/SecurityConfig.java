@@ -38,7 +38,9 @@ public class SecurityConfig {
             "/v3/api-docs/**",
             "/swagger-resources/**",
             // Error
-            "/error"
+            "/error",
+            // Service-to-service endpoints
+            "/lifepill/v1/prescription/*/responses"
     };
 
     @Bean
