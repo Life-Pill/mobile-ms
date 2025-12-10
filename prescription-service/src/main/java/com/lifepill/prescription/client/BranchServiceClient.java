@@ -11,5 +11,5 @@ import org.springframework.web.bind.annotation.PathVariable;
 public interface BranchServiceClient {
     
     @GetMapping("/lifepill/v1/branch/{branchId}")
-    BranchDetailsDTO getBranchById(@PathVariable("branchId") Long branchId);
+    BranchApiResponse<BranchDetailsDTO> getBranchById(@PathVariable("branchId") Long branchId);
 }

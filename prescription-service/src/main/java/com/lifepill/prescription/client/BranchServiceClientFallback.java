@@ -11,12 +11,14 @@ import org.springframework.stereotype.Component;
 public class BranchServiceClientFallback implements BranchServiceClient {
     
     @Override
-    public BranchDetailsDTO getBranchById(Long branchId) {
+    public BranchApiResponse<BranchDetailsDTO> getBranchById(Long branchId) {
         log.warn("Branch service unavailable, returning fallback for branchId: {}", branchId);
-        return BranchDetailsDTO.builder()
+        BranchDetailsDTO fallbackData = BranchDetailsDTO.builder()
                 .branchId(branchId)
                 .branchName("Unknown Branch")
                 .branchAddress("Address unavailable")
                 .build();
+        
+        return new BranchApiResponse<>(200, "Fallback", fallbackData);
     }
 }

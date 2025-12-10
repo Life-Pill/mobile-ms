@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -145,15 +146,15 @@ public class FcmService {
      */
     public void sendPrescriptionResponseNotification(String fcmToken, UUID prescriptionId, 
                                                       String branchName, String status) {
+        String safeBranchName = branchName != null ? branchName : "Unknown Branch";
         String title = "Prescription Response Received";
-        String body = String.format("%s has responded to your prescription: %s", branchName, status);
+        String body = String.format("%s has responded to your prescription: %s", safeBranchName, status);
         
-        Map<String, String> data = Map.of(
-                "type", "PRESCRIPTION_RESPONSE",
-                "prescriptionId", prescriptionId.toString(),
-                "branchName", branchName,
-                "status", status
-        );
+        Map<String, String> data = new HashMap<>();
+        data.put("type", "PRESCRIPTION_RESPONSE");
+        data.put("prescriptionId", prescriptionId.toString());
+        data.put("branchName", safeBranchName);
+        data.put("status", status != null ? status : "UNKNOWN");
 
         sendToDevice(fcmToken, title, body, data);
     }

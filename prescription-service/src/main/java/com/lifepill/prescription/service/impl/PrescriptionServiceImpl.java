@@ -2,6 +2,7 @@ package com.lifepill.prescription.service.impl;
 
 import com.lifepill.prescription.client.BranchDetailsDTO;
 import com.lifepill.prescription.client.BranchServiceClient;
+import com.lifepill.prescription.client.BranchApiResponse;
 import com.lifepill.prescription.config.RabbitMQConfig;
 import com.lifepill.prescription.dto.request.BranchResponseRequest;
 import com.lifepill.prescription.dto.request.MobilePrescriptionUploadRequest;
@@ -239,12 +240,15 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         prescription.setStatus(Prescription.PrescriptionStatus.RESPONDED);
         prescriptionRepository.save(prescription);
         
-        // 7. Publish event for user notification
-        PrescriptionResponseEvent event = buildResponseEvent(prescription, response);
+        // 7. Get branch details
+        BranchDetailsDTO branchDetails = fetchBranchDetails(request.getBranchId());
+
+        // 8. Publish event for user notification
+        PrescriptionResponseEvent event = buildResponseEvent(prescription, response, branchDetails);
         rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY_RESPONSE, event);
         log.info("Published prescription response event for prescription: {}, branch: {}", prescriptionId, request.getBranchId());
         
-        return mapToResponseDTO(response);
+        return mapToResponseDTO(response, branchDetails);
     }
     
     @Override
@@ -284,13 +288,16 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         List<MedicineAvailability> medicines = saveMedicineAvailabilities(response, request.getMedicines());
         response.setMedicineAvailabilities(medicines);
         
-        // 8. Publish update event
-        PrescriptionResponseEvent event = buildResponseEvent(response.getPrescription(), response);
+        // 8. Get branch details
+        BranchDetailsDTO branchDetails = fetchBranchDetails(request.getBranchId());
+
+        // 9. Publish update event
+        PrescriptionResponseEvent event = buildResponseEvent(response.getPrescription(), response, branchDetails);
         event.setEventType("PRESCRIPTION_RESPONSE_UPDATED");
         rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY_RESPONSE, event);
         log.info("Updated prescription response: {} for prescription: {}", responseId, prescriptionId);
         
-        return mapToResponseDTO(response);
+        return mapToResponseDTO(response, branchDetails);
     }
     
     @Override
@@ -361,8 +368,24 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         return medicineAvailabilityRepository.saveAll(availabilities);
     }
     
+    private BranchDetailsDTO fetchBranchDetails(Long branchId) {
+        try {
+            BranchApiResponse<BranchDetailsDTO> response = branchServiceClient.getBranchById(branchId);
+            if (response != null && response.getData() != null) {
+                log.info("Fetched branch details for branchId: {}", branchId);
+                return response.getData();
+            }
+            log.warn("Branch service returned empty data for branchId: {}", branchId);
+            return null;
+        } catch (Exception e) {
+            log.warn("Failed to fetch branch details for branchId: {}. Error: {}", branchId, e.getMessage());
+            return null;
+        }
+    }
+
     private PrescriptionResponseEvent buildResponseEvent(Prescription prescription, 
-            com.lifepill.prescription.entity.PrescriptionResponse response) {
+            com.lifepill.prescription.entity.PrescriptionResponse response,
+            BranchDetailsDTO branchDetails) {
         
         List<PrescriptionResponseEvent.MedicineInfo> medicineInfos = response.getMedicineAvailabilities().stream()
                 .map(med -> PrescriptionResponseEvent.MedicineInfo.builder()
@@ -372,16 +395,6 @@ public class PrescriptionServiceImpl implements PrescriptionService {
                         .unitPrice(med.getUnitPrice())
                         .build())
                 .collect(Collectors.toList());
-        
-        // Fetch branch details from branch-service
-        BranchDetailsDTO branchDetails = null;
-        try {
-            branchDetails = branchServiceClient.getBranchById(response.getBranchId());
-            log.info("Fetched branch details for branchId: {}", response.getBranchId());
-        } catch (Exception e) {
-            log.warn("Failed to fetch branch details for branchId: {}. Error: {}", 
-                    response.getBranchId(), e.getMessage());
-        }
         
         return PrescriptionResponseEvent.builder()
                 .responseId(response.getId())
@@ -435,7 +448,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
                 .build();
     }
     
-    private BranchResponseDTO mapToResponseDTO(com.lifepill.prescription.entity.PrescriptionResponse response) {
+    private BranchResponseDTO mapToResponseDTO(com.lifepill.prescription.entity.PrescriptionResponse response, BranchDetailsDTO branchDetails) {
         List<MedicineAvailabilityDTO> medicines = response.getMedicineAvailabilities() != null
                 ? response.getMedicineAvailabilities().stream()
                     .map(this::mapToMedicineDTO)
@@ -445,12 +458,24 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         return BranchResponseDTO.builder()
                 .id(response.getId())
                 .branchId(response.getBranchId())
+                .branchName(branchDetails != null ? branchDetails.getBranchName() : null)
+                .branchAddress(branchDetails != null ? branchDetails.getBranchAddress() : null)
+                .branchContact(branchDetails != null ? branchDetails.getBranchContact() : null)
+                .branchEmail(branchDetails != null ? branchDetails.getBranchEmail() : null)
+                .branchLatitude(branchDetails != null ? branchDetails.getBranchLatitude() : null)
+                .branchLongitude(branchDetails != null ? branchDetails.getBranchLongitude() : null)
+                .branchLocation(branchDetails != null ? branchDetails.getBranchLocation() : null)
                 .status(response.getStatus().name())
                 .totalAmount(response.getTotalAmount())
                 .notes(response.getNotes())
                 .responseTimestamp(response.getResponseTimestamp())
                 .medicines(medicines)
                 .build();
+    }
+    
+    private BranchResponseDTO mapToResponseDTO(com.lifepill.prescription.entity.PrescriptionResponse response) {
+        // Fallback for internal calls that don't need branch details immediately or fetch them separately
+        return mapToResponseDTO(response, null);
     }
     
     private MedicineAvailabilityDTO mapToMedicineDTO(MedicineAvailability medicine) {
