@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifePill POS - Prescription Notifications</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #00d4ff;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .status-dot.connected {
+            background: #00ff88;
+            box-shadow: 0 0 10px #00ff88;
+        }
+
+        .status-dot.disconnected {
+            background: #ff4444;
+        }
+
+        .status-dot.pending {
+            background: #ffaa00;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+
+        .btn-connect {
+            background: #00d4ff;
+            color: #000;
+        }
+
+        .btn-disconnect {
+            background: #ff4444;
+            color: #fff;
+        }
+
+        .btn-connect:hover {
+            background: #00a8cc;
+            transform: scale(1.05);
+        }
+
+        .btn-disconnect:hover {
+            background: #cc3333;
+        }
+
+        .notifications {
+            display: grid;
+            gap: 15px;
+        }
+
+        .notification-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .notification-type {
+            background: #00d4ff;
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .notification-time {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .notification-body {
+            display: grid;
+            gap: 8px;
+        }
+
+        .notification-field {
+            display: flex;
+            gap: 10px;
+        }
+
+        .field-label {
+            color: #00d4ff;
+            min-width: 120px;
+            font-weight: 500;
+        }
+
+        .field-value {
+            color: #fff;
+            word-break: break-all;
+        }
+
+        .prescription-image {
+            max-width: 200px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+
+        .log-section {
+            margin-top: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .log-header {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+
+        #logs {
+            font-family: monospace;
+            font-size: 12px;
+            color: #aaa;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            margin: 3px 0;
+        }
+
+        .log-entry.info {
+            color: #00d4ff;
+        }
+
+        .log-entry.success {
+            color: #00ff88;
+        }
+
+        .log-entry.error {
+            color: #ff4444;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🏥 LifePill POS - Prescription Notifications</h1>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <div id="ws-status" class="status-dot disconnected"></div>
+                <span id="ws-text">WebSocket: Disconnected</span>
+            </div>
+            <div class="status-item">
+                <span>📋 Notifications: </span>
+                <span id="notification-count">0</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-connect" onclick="connect()">🔌 Connect</button>
+            <button class="btn-disconnect" onclick="disconnect()">❌ Disconnect</button>
+            <button onclick="clearNotifications()">🗑️ Clear</button>
+        </div>
+
+        <div id="notifications" class="notifications">
+            <div class="empty-state">
+                <h3>No prescriptions yet</h3>
+                <p>Connect to WebSocket and upload a prescription to see notifications here</p>
+            </div>
+        </div>
+
+        <div class="log-section">
+            <div class="log-header">📝 Connection Logs</div>
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        let stompClient = null;
+        let notificationCount = 0;
+        const WS_URL = 'http://35.208.197.159:9191/ws';
+
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logs.insertBefore(entry, logs.firstChild);
+        }
+
+        function updateStatus(connected) {
+            const dot = document.getElementById('ws-status');
+            const text = document.getElementById('ws-text');
+            if (connected) {
+                dot.className = 'status-dot connected';
+                text.textContent = 'WebSocket: Connected';
+            } else {
+                dot.className = 'status-dot disconnected';
+                text.textContent = 'WebSocket: Disconnected';
+            }
+        }
+
+        function connect() {
+            log('Connecting to ' + WS_URL + '...', 'info');
+            document.getElementById('ws-status').className = 'status-dot pending';
+
+            const socket = new SockJS(WS_URL);
+            stompClient = Stomp.over(socket);
+            stompClient.debug = (msg) => log(msg, 'info');
+
+            stompClient.connect({}, function (frame) {
+                log('✅ Connected: ' + frame, 'success');
+                updateStatus(true);
+
+                // Subscribe to all prescriptions (POS view)
+                stompClient.subscribe('/topic/prescriptions', function (message) {
+                    log('📩 Received prescription notification', 'success');
+                    handleNotification(JSON.parse(message.body));
+                });
+
+                log('📡 Subscribed to /topic/prescriptions', 'success');
+            }, function (error) {
+                log('❌ Connection error: ' + error, 'error');
+                updateStatus(false);
+            });
+        }
+
+        function disconnect() {
+            if (stompClient) {
+                stompClient.disconnect();
+                log('Disconnected from WebSocket', 'info');
+            }
+            updateStatus(false);
+        }
+
+        function handleNotification(data) {
+            notificationCount++;
+            document.getElementById('notification-count').textContent = notificationCount;
+
+            const container = document.getElementById('notifications');
+            // Remove empty state
+            const emptyState = container.querySelector('.empty-state');
+            if (emptyState) emptyState.remove();
+
+            const card = document.createElement('div');
+            card.className = 'notification-card';
+            card.innerHTML = `
+                <div class="notification-header">
+                    <span class="notification-type">${data.eventType || 'PRESCRIPTION_UPLOADED'}</span>
+                    <span class="notification-time">${new Date().toLocaleString()}</span>
+                </div>
+                <div class="notification-body">
+                    <div class="notification-field">
+                        <span class="field-label">Prescription ID:</span>
+                        <span class="field-value">${data.prescriptionId}</span>
+                    </div>
+                    <div class="notification-field">
+                        <span class="field-label">User ID:</span>
+                        <span class="field-value">${data.userId}</span>
+                    </div>
+                    <div class="notification-field">
+                        <span class="field-label">Notes:</span>
+                        <span class="field-value">${data.notes || 'No notes'}</span>
+                    </div>
+                    <div class="notification-field">
+                        <span class="field-label">Status:</span>
+                        <span class="field-value">${data.status}</span>
+                    </div>
+                    ${data.imageUrl ? `<img src="${data.imageUrl}" class="prescription-image" alt="Prescription">` : ''}
+                </div>
+            `;
+            container.insertBefore(card, container.firstChild);
+        }
+
+        function clearNotifications() {
+            document.getElementById('notifications').innerHTML = `
+                <div class="empty-state">
+                    <h3>No prescriptions yet</h3>
+                    <p>Connect to WebSocket and upload a prescription to see notifications here</p>
+                </div>
+            `;
+            notificationCount = 0;
+            document.getElementById('notification-count').textContent = '0';
+        }
+
+        // Auto-connect on page load
+        window.onload = () => setTimeout(connect, 500);
+    </script>
+</body>
+
+</html>

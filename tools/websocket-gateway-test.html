@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Gateway Test - LifePill Notification Service</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .config-section h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            padding: 12px 30px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .connect-btn {
+            background: #28a745;
+            color: white;
+        }
+        .connect-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+        .disconnect-btn {
+            background: #dc3545;
+            color: white;
+        }
+        .disconnect-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+        }
+        .subscribe-btn {
+            background: #007bff;
+            color: white;
+        }
+        .subscribe-btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+        }
+        .clear-btn {
+            background: #6c757d;
+            color: white;
+        }
+        .clear-btn:hover {
+            background: #5a6268;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .status {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        .status.connecting {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeeba;
+        }
+        .logs {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin-top: 20px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #667eea;
+            padding-left: 10px;
+        }
+        .log-entry.error {
+            border-left-color: #dc3545;
+            color: #ff6b6b;
+        }
+        .log-entry.success {
+            border-left-color: #28a745;
+            color: #51cf66;
+        }
+        .log-entry.info {
+            border-left-color: #007bff;
+            color: #74c0fc;
+        }
+        .subscriptions {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .subscriptions h3 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+        .subscription-item {
+            background: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 3px;
+            border-left: 3px solid #007bff;
+        }
+        .endpoint-info {
+            background: #fff9db;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+        .endpoint-info strong {
+            color: #f57c00;
+        }
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 WebSocket Gateway Test</h1>
+        <div class="subtitle">LifePill Notification Service via API Gateway</div>
+
+        <div class="endpoint-info">
+            <strong>🌐 Direct Endpoint:</strong> ws://localhost:8088/ws<br>
+            <strong>🚀 API Gateway Endpoint:</strong> ws://35.208.197.159:9191/ws<br>
+            <strong>📍 Current Configuration Below ⬇️</strong>
+        </div>
+
+        <div class="config-section">
+            <h3>⚙️ Connection Configuration</h3>
+            <div class="form-group">
+                <label for="wsUrl">WebSocket URL (via API Gateway):</label>
+                <input type="text" id="wsUrl" value="ws://35.208.197.159:9191/ws" 
+                       placeholder="ws://35.208.197.159:9191/ws">
+            </div>
+            
+            <div class="two-column">
+                <div class="form-group">
+                    <label for="userId">User ID (for testing):</label>
+                    <input type="text" id="userId" value="1" placeholder="Enter User ID">
+                </div>
+                <div class="form-group">
+                    <label for="branchId">Branch ID (for testing):</label>
+                    <input type="text" id="branchId" value="1" placeholder="Enter Branch ID">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="jwtToken">JWT Token (Optional - for authenticated connections):</label>
+                <input type="text" id="jwtToken" placeholder="Enter JWT token if authentication is required">
+            </div>
+
+            <button class="connect-btn" onclick="connect()">🔌 Connect via Gateway</button>
+            <button class="disconnect-btn" onclick="disconnect()" disabled id="disconnectBtn">⚡ Disconnect</button>
+            <button class="clear-btn" onclick="clearLogs()">🗑️ Clear Logs</button>
+        </div>
+
+        <div id="statusDiv" class="status disconnected">
+            🔴 Disconnected
+        </div>
+
+        <div class="config-section">
+            <h3>📡 Subscribe to Topics</h3>
+            <button class="subscribe-btn" onclick="subscribeToAllPrescriptions()" id="subAllBtn" disabled>
+                📋 All Prescriptions (POS)
+            </button>
+            <button class="subscribe-btn" onclick="subscribeToBranchPrescriptions()" id="subBranchBtn" disabled>
+                🏢 Branch Prescriptions
+            </button>
+            <button class="subscribe-btn" onclick="subscribeToUserResponses()" id="subResponseBtn" disabled>
+                💬 User Responses
+            </button>
+            <button class="subscribe-btn" onclick="subscribeToUserNotifications()" id="subNotifBtn" disabled>
+                🔔 User Notifications
+            </button>
+        </div>
+
+        <div class="subscriptions">
+            <h3>📌 Active Subscriptions</h3>
+            <div id="subscriptionsList">No active subscriptions</div>
+        </div>
+
+        <div class="config-section">
+            <h3>📜 Connection Logs</h3>
+            <div class="logs" id="logs">
+                <div class="log-entry info">
+                    <strong>[INFO]</strong> Ready to connect. Click "Connect via Gateway" to start.
+                </div>
+                <div class="log-entry info">
+                    <strong>[INFO]</strong> Testing endpoint: ws://35.208.197.159:9191/ws (via API Gateway)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script>
+        let stompClient = null;
+        let subscriptions = [];
+
+        function updateStatus(status, message) {
+            const statusDiv = document.getElementById('statusDiv');
+            statusDiv.className = `status ${status}`;
+            statusDiv.textContent = message;
+        }
+
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            logs.appendChild(entry);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function updateSubscriptionsList() {
+            const list = document.getElementById('subscriptionsList');
+            if (subscriptions.length === 0) {
+                list.innerHTML = 'No active subscriptions';
+            } else {
+                list.innerHTML = subscriptions.map(sub => 
+                    `<div class="subscription-item">📌 ${sub}</div>`
+                ).join('');
+            }
+        }
+
+        function connect() {
+            const wsUrl = document.getElementById('wsUrl').value;
+            const jwtToken = document.getElementById('jwtToken').value.trim();
+            
+            log(`Connecting to: ${wsUrl} via API Gateway...`, 'info');
+            updateStatus('connecting', '🟡 Connecting...');
+
+            const socket = new SockJS(wsUrl);
+            stompClient = Stomp.over(socket);
+
+            // Add JWT token to connection headers if provided
+            const connectHeaders = {};
+            if (jwtToken) {
+                connectHeaders['Authorization'] = `Bearer ${jwtToken}`;
+                log('JWT token added to connection headers', 'info');
+            }
+
+            stompClient.connect(
+                connectHeaders,
+                function(frame) {
+                    log('✅ Connected successfully via API Gateway!', 'success');
+                    updateStatus('connected', '🟢 Connected via Gateway');
+                    
+                    document.getElementById('disconnectBtn').disabled = false;
+                    document.getElementById('subAllBtn').disabled = false;
+                    document.getElementById('subBranchBtn').disabled = false;
+                    document.getElementById('subResponseBtn').disabled = false;
+                    document.getElementById('subNotifBtn').disabled = false;
+                    
+                    log(`Session ID: ${frame.headers['session']}`, 'info');
+                    log('Ready to subscribe to topics', 'info');
+                },
+                function(error) {
+                    log(`❌ Connection error: ${error}`, 'error');
+                    updateStatus('disconnected', '🔴 Connection Failed');
+                    console.error('Connection error:', error);
+                    
+                    document.getElementById('disconnectBtn').disabled = true;
+                    document.getElementById('subAllBtn').disabled = true;
+                    document.getElementById('subBranchBtn').disabled = true;
+                    document.getElementById('subResponseBtn').disabled = true;
+                    document.getElementById('subNotifBtn').disabled = true;
+                }
+            );
+        }
+
+        function disconnect() {
+            if (stompClient !== null) {
+                stompClient.disconnect(() => {
+                    log('🔌 Disconnected from Gateway', 'info');
+                    updateStatus('disconnected', '🔴 Disconnected');
+                });
+            }
+            subscriptions = [];
+            updateSubscriptionsList();
+            
+            document.getElementById('disconnectBtn').disabled = true;
+            document.getElementById('subAllBtn').disabled = true;
+            document.getElementById('subBranchBtn').disabled = true;
+            document.getElementById('subResponseBtn').disabled = true;
+            document.getElementById('subNotifBtn').disabled = true;
+        }
+
+        function subscribeToAllPrescriptions() {
+            const topic = '/topic/prescriptions';
+            log(`Subscribing to: ${topic}`, 'info');
+            
+            stompClient.subscribe(topic, function(message) {
+                log(`📋 [All Prescriptions] ${message.body}`, 'success');
+            });
+            
+            subscriptions.push(topic);
+            updateSubscriptionsList();
+            log(`✅ Subscribed to ${topic}`, 'success');
+        }
+
+        function subscribeToBranchPrescriptions() {
+            const branchId = document.getElementById('branchId').value;
+            const topic = `/topic/branch/${branchId}/prescriptions`;
+            log(`Subscribing to: ${topic}`, 'info');
+            
+            stompClient.subscribe(topic, function(message) {
+                log(`🏢 [Branch ${branchId}] ${message.body}`, 'success');
+            });
+            
+            subscriptions.push(topic);
+            updateSubscriptionsList();
+            log(`✅ Subscribed to ${topic}`, 'success');
+        }
+
+        function subscribeToUserResponses() {
+            const userId = document.getElementById('userId').value;
+            const topic = `/topic/user/${userId}/responses`;
+            log(`Subscribing to: ${topic}`, 'info');
+            
+            stompClient.subscribe(topic, function(message) {
+                log(`💬 [User ${userId} Response] ${message.body}`, 'success');
+            });
+            
+            subscriptions.push(topic);
+            updateSubscriptionsList();
+            log(`✅ Subscribed to ${topic}`, 'success');
+        }
+
+        function subscribeToUserNotifications() {
+            const userId = document.getElementById('userId').value;
+            const topic = `/topic/user/${userId}/notifications`;
+            log(`Subscribing to: ${topic}`, 'info');
+            
+            stompClient.subscribe(topic, function(message) {
+                log(`🔔 [User ${userId} Notification] ${message.body}`, 'success');
+            });
+            
+            subscriptions.push(topic);
+            updateSubscriptionsList();
+            log(`✅ Subscribed to ${topic}`, 'success');
+        }
+
+        function clearLogs() {
+            const logs = document.getElementById('logs');
+            logs.innerHTML = '<div class="log-entry info"><strong>[INFO]</strong> Logs cleared. Ready for new connections.</div>';
+        }
+    </script>
+</body>
+</html>

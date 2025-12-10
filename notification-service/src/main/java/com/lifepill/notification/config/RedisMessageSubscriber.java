@@ -27,9 +27,17 @@ public class RedisMessageSubscriber {
     public void handlePrescriptionMessage(String message) {
         try {
             log.debug("Received prescription notification from Redis: {}", message);
-            PrescriptionNotificationDTO notification = objectMapper.readValue(message, PrescriptionNotificationDTO.class);
+            
+            // Handle double-quoted JSON string from Redis
+            String jsonMessage = message;
+            if (message.startsWith("\"") && message.endsWith("\"")) {
+                // Remove outer quotes and unescape inner quotes
+                jsonMessage = message.substring(1, message.length() - 1).replace("\\\"", "\"");
+            }
+            
+            PrescriptionNotificationDTO notification = objectMapper.readValue(jsonMessage, PrescriptionNotificationDTO.class);
             messagingTemplate.convertAndSend("/topic/prescriptions", notification);
-            log.info("Broadcasted prescription {} to all WebSocket clients", notification.getPrescriptionId());
+            log.info("Broadcasted prescription {} to all WebSocket clients via Redis", notification.getPrescriptionId());
         } catch (Exception e) {
             log.error("Error processing prescription message from Redis: {}", e.getMessage(), e);
         }
