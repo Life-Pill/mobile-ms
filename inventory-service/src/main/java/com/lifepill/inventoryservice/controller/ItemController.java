@@ -141,6 +141,16 @@ public class ItemController {
         return ResponseEntity.ok(ApiResponse.success(items));
     }
     
+    @GetMapping("/search-by-branch-Id")
+    @Operation(summary = "Search items by branch ID", description = "Search items by branch ID and item name")
+    public ResponseEntity<ApiResponse<List<ItemDTO>>> searchItemsByBranchId(
+            @RequestParam Long branchId,
+            @RequestParam String name) {
+        log.info("Searching items by branch ID: {} and name: {}", branchId, name);
+        List<ItemDTO> items = itemService.searchItemsByBranchId(branchId, name);
+        return ResponseEntity.ok(ApiResponse.success(items));
+    }
+    
     @GetMapping("/get-by-barcode")
     @Operation(summary = "Get items by barcode", description = "Search items by barcode")
     public ResponseEntity<ApiResponse<List<ItemDTO>>> getItemsByBarCode(@RequestParam String barcode) {

@@ -52,4 +52,6 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     
     @Query("SELECT COUNT(i) FROM Item i WHERE i.branchId = :branchId")
     long countByBranchId(@Param("branchId") Long branchId);
+    
+    List<Item> findByBranchIdAndItemNameContainingIgnoreCase(Long branchId, String itemName);
 }

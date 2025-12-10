@@ -95,22 +95,37 @@ public class PrescriptionServiceImpl implements PrescriptionService {
 
     @Override
     @Transactional
-    public PrescriptionResponse uploadPrescriptionMobile(MobilePrescriptionUploadRequest request) {
-        // Mobile upload - image URL is already provided, just save to DB
-        log.info("Processing mobile prescription upload for user: {}", request.getUserId());
+    public PrescriptionResponse uploadPrescriptionMobile(UUID userId, String notes, MultipartFile file) {
+        // Mobile upload - upload image to S3 and save to DB
+        log.info("Processing mobile prescription upload for user: {}", userId);
         
+        // 1. Upload image to S3
+        String key = "prescriptions/" + UUID.randomUUID() + "-" + file.getOriginalFilename();
+        try {
+            s3Client.putObject(PutObjectRequest.builder()
+                            .bucket(bucketName)
+                            .key(key)
+                            .build(),
+                    RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to upload image to S3", e);
+        }
+
+        String imageUrl = "https://" + bucketName + ".s3.amazonaws.com/" + key;
+        
+        // 2. Save Metadata to DB
         Prescription prescription = Prescription.builder()
-                .userId(request.getUserId())
-                .imageUrl(request.getImageUrl())
-                .notes(request.getNotes())
+                .userId(userId)
+                .imageUrl(imageUrl)
+                .notes(notes)
                 .status(Prescription.PrescriptionStatus.UPLOADED)
                 .uploadTimestamp(LocalDateTime.now())
                 .build();
 
         prescription = prescriptionRepository.save(prescription);
-        log.info("Saved mobile prescription: {} for user: {}", prescription.getId(), request.getUserId());
+        log.info("Saved mobile prescription: {} for user: {}", prescription.getId(), userId);
 
-        // Publish Event for notification (same as regular upload)
+        // 3. Publish Event for notification
         PrescriptionUploadedEvent event = PrescriptionUploadedEvent.builder()
                 .prescriptionId(prescription.getId())
                 .userId(prescription.getUserId())

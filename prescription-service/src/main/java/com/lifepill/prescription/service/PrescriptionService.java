@@ -17,7 +17,7 @@ public interface PrescriptionService {
     // Prescription CRUD operations
     PrescriptionResponse uploadPrescription(PrescriptionUploadRequest request, MultipartFile file);
     
-    PrescriptionResponse uploadPrescriptionMobile(MobilePrescriptionUploadRequest request);
+    PrescriptionResponse uploadPrescriptionMobile(UUID userId, String notes, MultipartFile file);
     
     PrescriptionResponse getPrescription(UUID prescriptionId);
     

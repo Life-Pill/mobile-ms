@@ -53,4 +53,6 @@ public interface ItemService {
     long countItemsByBranch(Long branchId);
     
     List<ItemDTO> getLowStockItemsByBranch(Long branchId, Double threshold);
+    
+    List<ItemDTO> searchItemsByBranchId(Long branchId, String itemName);
 }

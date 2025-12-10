@@ -377,4 +377,14 @@ public class ItemServiceImpl implements ItemService {
                 .map(this::mapToDTO)
                 .collect(java.util.stream.Collectors.toList());
     }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<ItemDTO> searchItemsByBranchId(Long branchId, String itemName) {
+        log.info("Searching items by branch ID: {} and name: {}", branchId, itemName);
+        return itemRepository.findByBranchIdAndItemNameContainingIgnoreCase(branchId, itemName)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
 }

@@ -3,6 +3,7 @@ package com.lifepill.prescription.controller;
 import com.lifepill.prescription.dto.request.BranchResponseRequest;
 import com.lifepill.prescription.dto.request.MobilePrescriptionUploadRequest;
 import com.lifepill.prescription.dto.request.PrescriptionUploadRequest;
+import com.lifepill.prescription.dto.response.ApiResponse;
 import com.lifepill.prescription.dto.response.BranchResponseDTO;
 import com.lifepill.prescription.dto.response.PrescriptionResponse;
 import com.lifepill.prescription.service.PrescriptionService;
@@ -29,8 +30,6 @@ public class PrescriptionController {
 
     private final PrescriptionService prescriptionService;
 
-    // ======================== Prescription Endpoints ========================
-
     @Operation(summary = "Upload a new prescription (image + metadata)")
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<PrescriptionResponse> uploadPrescription(
@@ -47,12 +46,19 @@ public class PrescriptionController {
     }
 
     @Operation(summary = "Upload prescription from mobile (saves to DB only)",
-            description = "Mobile endpoint that accepts prescription data with already-uploaded image URL and saves directly to database")
-    @PostMapping(value = "/upload-mobile")
-    public ResponseEntity<PrescriptionResponse> uploadPrescriptionMobile(
-            @RequestBody @Valid MobilePrescriptionUploadRequest request) {
+            description = "Mobile endpoint that accepts prescription image with userId and notes, and saves directly to database")
+    @PostMapping(value = "/upload-mobile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<PrescriptionResponse>> uploadPrescriptionMobile(
+            @RequestPart("file") MultipartFile file,
+            @RequestParam("userId") UUID userId,
+            @RequestParam(value = "notes", required = false) String notes) {
         
-        return new ResponseEntity<>(prescriptionService.uploadPrescriptionMobile(request), HttpStatus.CREATED);
+        PrescriptionResponse response = prescriptionService.uploadPrescriptionMobile(userId, notes, file);
+        
+        return new ResponseEntity<>(
+                ApiResponse.success("Prescription uploaded successfully", response),
+                HttpStatus.CREATED
+        );
     }
 
     @Operation(summary = "Get all prescriptions for a user")
