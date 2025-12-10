@@ -47,14 +47,16 @@ public class PrescriptionEventListener {
                     .status((String) eventData.get("status"))
                     .eventType((String) eventData.getOrDefault("eventType", "PRESCRIPTION_UPLOADED"))
                     .build();
-            
+
             // Broadcast to all POS systems via WebSocket
-            notificationService.broadcastPrescriptionNotification(notification);
+            // notificationService.broadcastPrescriptionNotification(notification);
             
-            // Also publish to Redis for multi-instance support
+            // Publish to Redis for multi-instance support
+            // Redis subscriber will broadcast to all WebSocket clients
+            // NOTE: Only use Redis to avoid duplicate notifications
             redisPublisherService.publishPrescriptionNotification(notification);
             
-            log.info("Successfully broadcasted prescription {} to all branches", 
+            log.info("Successfully published prescription {} to Redis for broadcasting", 
                     notification.getPrescriptionId());
             
         } catch (Exception e) {
@@ -110,17 +112,16 @@ public class PrescriptionEventListener {
                 );
             }
             
-            // 2. Notify the user via WebSocket
+            // 2. Notify the user via Redis (which will broadcast to WebSocket)
             if (userId != null) {
-                notificationService.notifyUser(userId, notification);
-                
-                // 3. Publish to Redis for multi-instance support
+                // Publish to Redis for multi-instance support
+                // Redis subscriber will send to user's WebSocket
                 redisPublisherService.publishUserNotification(notification);
                 
-                log.info("Successfully notified user {} about response from branch {}", 
+                log.info("Successfully published user {} notification about response from branch {}", 
                         userId, notification.getBranchId());
                 
-                // 4. Try to send FCM push notification (for offline users)
+                // 3. Try to send FCM push notification (for offline users)
                 // In production, you'd look up the user's FCM token from a database
                 // fcmService.sendPrescriptionResponseNotification(fcmToken, prescriptionId, 
                 //         notification.getBranchName(), notification.getStatus());

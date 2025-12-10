@@ -55,14 +55,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Main WebSocket endpoint with SockJS fallback
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")
                 .withSockJS()
                 .setHeartbeatTime(25000)
                 .setDisconnectDelay(5000);
         
-        // Direct WebSocket endpoint (no SockJS)
-        registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*");
+        // Direct WebSocket endpoint (no SockJS)  
+        registry.addEndpoint("/ws");
     }
 
     @Override
