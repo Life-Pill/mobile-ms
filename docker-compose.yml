@@ -79,7 +79,7 @@ services:
       # Distributed Tracing
       - TRACING_ENABLED=${TRACING_ENABLED:-true}
       - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
-      - TRACING_SAMPLING_PROBABILITY=${TRACING_SAMPLING_PROBABILITY:-1.0}
+      - TRACING_SAMPLING_PROBABILITY=${TRACING_SAMPLING_PROBABILITY:-0.5}
       # JWT Configuration
       - JWT_SECRET=${JWT_SECRET}
     volumes:
@@ -134,7 +134,7 @@ services:
       # Distributed Tracing
       - TRACING_ENABLED=${TRACING_ENABLED:-true}
       - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
-      - TRACING_SAMPLING_PROBABILITY=${TRACING_SAMPLING_PROBABILITY:-1.0}
+      - TRACING_SAMPLING_PROBABILITY=${TRACING_SAMPLING_PROBABILITY:-0.5}
       # Swagger Configuration
       - SWAGGER_SERVER_URL=http://35.208.197.159:8080/api
       # Flyway Migration
@@ -321,7 +321,7 @@ services:
       # Distributed Tracing
       - TRACING_ENABLED=${TRACING_ENABLED:-true}
       - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
-      - TRACING_SAMPLING_PROBABILITY=${TRACING_SAMPLING_PROBABILITY:-1.0}
+      - TRACING_SAMPLING_PROBABILITY=${TRACING_SAMPLING_PROBABILITY:-0.5}
       # Swagger Configuration
       - CUSTOMER_SERVICE_SWAGGER_URL=http://35.208.197.159:8070
       # Flyway Migration
@@ -418,7 +418,7 @@ services:
       - CORS_HEADERS=${CORS_HEADERS:-*}
       # Tracing
       - TRACING_ENABLED=true
-      - TRACING_SAMPLING_PROBABILITY=1.0
+      - TRACING_SAMPLING_PROBABILITY=0.5
       # JWT Configuration
       - JWT_SECRET=${JWT_SECRET}
       # AWS S3 Configuration
@@ -614,7 +614,7 @@ services:
       - JWT_REFRESH_TOKEN_EXPIRATION=${JWT_REFRESH_EXPIRATION:-604800000}
       # Tracing
       - TRACING_ENABLED=true
-      - TRACING_SAMPLING_PROBABILITY=1.0
+      - TRACING_SAMPLING_PROBABILITY=0.5
       - LOG_PATH=/logs
       # Swagger Configuration
       - IDENTITY_SERVICE_SWAGGER_URL=http://35.208.197.159:8085
@@ -730,7 +730,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD:-postgres}
       - EUREKA_URI=http://admin:${EUREKA_PASSWORD:-admin}@service-registry:8761/eureka/
       - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
-      - TRACING_SAMPLING_PROBABILITY=1.0
+      - TRACING_SAMPLING_PROBABILITY=0.5
       - JWT_SECRET=${JWT_SECRET}
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
       - FCM_ENABLED=true
