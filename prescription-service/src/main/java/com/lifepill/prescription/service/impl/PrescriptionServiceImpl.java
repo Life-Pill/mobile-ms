@@ -460,8 +460,8 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     }
     
     private BranchResponseDTO mapToResponseDTO(com.lifepill.prescription.entity.PrescriptionResponse response) {
-        // Fallback for internal calls that don't need branch details immediately or fetch them separately
-        return mapToResponseDTO(response, null);
+        BranchDetailsDTO branchDetails = fetchBranchDetails(response.getBranchId());
+        return mapToResponseDTO(response, branchDetails);
     }
     
     private MedicineAvailabilityDTO mapToMedicineDTO(MedicineAvailability medicine) {

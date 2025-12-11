@@ -83,6 +83,10 @@ public class PrescriptionEventListener {
             // Parse branchId - can be Long or UUID depending on source
             Long branchId = parseLong(eventData.get("branchId"));
             
+            Object timestampObj = eventData.get("responseTimestamp");
+            log.info("Processing event. responseTimestamp raw value: {}, type: {}", 
+                    timestampObj, (timestampObj != null ? timestampObj.getClass().getName() : "null"));
+            
             // Transform to notification DTO with full branch details
             BranchResponseNotificationDTO notification = BranchResponseNotificationDTO.builder()
                     .responseId(parseUUID(eventData.get("responseId")))
@@ -100,6 +104,8 @@ public class PrescriptionEventListener {
                     .notes((String) eventData.get("notes"))
                     .eventType((String) eventData.getOrDefault("eventType", "PRESCRIPTION_RESPONSE"))
                     .notificationTimestamp(java.time.LocalDateTime.now())
+                    .responseTimestamp(parseDateTime(eventData.get("responseTimestamp")))
+                    .medicines(parseMedicines(eventData.get("medicines")))
                     .build();
             
             // Parse total amount if present
@@ -205,6 +211,83 @@ public class PrescriptionEventListener {
                 log.warn("Invalid UUID string: {}", value);
                 return null;
             }
+        }
+        return null;
+    }
+
+    /**
+     * Safely parse medicines list from event data.
+     */
+    private List<BranchResponseNotificationDTO.MedicineInfo> parseMedicines(Object value) {
+        if (value == null) {
+            return null;
+        }
+        
+        if (value instanceof List) {
+            List<?> list = (List<?>) value;
+            return list.stream()
+                .map(item -> {
+                    if (item instanceof Map) {
+                        Map<?, ?> map = (Map<?, ?>) item;
+                        return BranchResponseNotificationDTO.MedicineInfo.builder()
+                            .medicineName((String) map.get("medicineName"))
+                            .isAvailable((Boolean) map.get("isAvailable"))
+                            // Handle integer conversion safely
+                            .quantityAvailable(map.get("quantityAvailable") instanceof Number ? 
+                                    ((Number) map.get("quantityAvailable")).intValue() : null)
+                            // Handle BigDecimal conversion safely
+                            .unitPrice(map.get("unitPrice") instanceof Number ? 
+                                    new java.math.BigDecimal(map.get("unitPrice").toString()) : null)
+                            .build();
+                    }
+                    // If it's already the correct object type (unlikely with Map<String, Object> input but possible if typed)
+                    if (item instanceof BranchResponseNotificationDTO.MedicineInfo) {
+                        return (BranchResponseNotificationDTO.MedicineInfo) item;
+                    }
+                    return null;
+                })
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toList());
+        }
+        return null;
+    }
+
+    /**
+     * Safely parse LocalDateTime from various input types.
+     */
+    private java.time.LocalDateTime parseDateTime(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof java.time.LocalDateTime) {
+            return (java.time.LocalDateTime) value;
+        }
+        if (value instanceof String) {
+            try {
+                // Try parsing standard ISO-8601 format
+                return java.time.LocalDateTime.parse((String) value);
+            } catch (java.time.format.DateTimeParseException e) {
+                log.warn("Invalid date time string: {}", value);
+                return null;
+            }
+        }
+        // Handle List representation (e.g. [2025, 12, 11, 21, 40, 34, 384427890]) which Jackson might produce
+        if (value instanceof List) {
+           try {
+               List<?> list = (List<?>) value;
+               if (list.size() >= 6) {
+                   int year = ((Number) list.get(0)).intValue();
+                   int month = ((Number) list.get(1)).intValue();
+                   int day = ((Number) list.get(2)).intValue();
+                   int hour = ((Number) list.get(3)).intValue();
+                   int minute = ((Number) list.get(4)).intValue();
+                   int second = ((Number) list.get(5)).intValue();
+                   int nano = list.size() > 6 ? ((Number) list.get(6)).intValue() : 0;
+                   return java.time.LocalDateTime.of(year, month, day, hour, minute, second, nano);
+               }
+           } catch (Exception e) {
+               log.warn("Failed to parse date list: {}", value);
+           }
         }
         return null;
     }
