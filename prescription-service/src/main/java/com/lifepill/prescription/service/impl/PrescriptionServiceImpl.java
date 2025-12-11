@@ -128,20 +128,6 @@ public class PrescriptionServiceImpl implements PrescriptionService {
 
         prescription = prescriptionRepository.save(prescription);
         log.info("Saved mobile prescription: {} for user: {}", prescription.getId(), userId);
-
-        // 3. Publish Event for notification
-        PrescriptionUploadedEvent event = PrescriptionUploadedEvent.builder()
-                .prescriptionId(prescription.getId())
-                .userId(prescription.getUserId())
-                .imageUrl(prescription.getImageUrl())
-                .notes(prescription.getNotes())
-                .status(prescription.getStatus().name())
-                .uploadTimestamp(prescription.getUploadTimestamp())
-                .build();
-        
-        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY_UPLOADED, event);
-        log.info("Published prescription uploaded event for mobile prescription: {}", prescription.getId());
-
         return mapToDTO(prescription);
     }
 
